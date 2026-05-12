@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import LenisProvider from '@/providers/LenisProvider'
 import QueryProvider from '@/providers/QueryProvider'
 import ThemeProvider from '@/providers/ThemeProvider'
+import 'lenis/dist/lenis.css'
 import './globals.css'
 
 const geistSans = Geist({
@@ -29,9 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="h-full" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
         <ThemeProvider>
-          <QueryProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-          </QueryProvider>
+          <LenisProvider>
+            <QueryProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </QueryProvider>
+          </LenisProvider>
         </ThemeProvider>
       </body>
     </html>

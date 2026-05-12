@@ -2,12 +2,15 @@
 
 import { useTheme } from 'next-themes'
 import { Moon, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 export default function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useSyncExternalStore(
+    useCallback(() => () => {}, []),
+    useCallback(() => true, []),
+    useCallback(() => false, [])
+  )
 
   if (!mounted) return <div className="h-8 w-8" />
 
@@ -16,7 +19,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="p-2 rounded-lg transition-colors"
+      className="rounded-lg p-2 transition-colors hover:bg-muted hover:text-foreground"
       style={{ color: 'var(--text-muted)' }}
       aria-label="Toggle theme"
     >
