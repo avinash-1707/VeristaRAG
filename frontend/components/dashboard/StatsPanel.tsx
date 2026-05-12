@@ -73,7 +73,7 @@ export default function StatsPanel() {
       <StatCard
         icon={<Shield className="h-5 w-5" style={{ color: 'var(--accent-primary)' }} />}
         label="Avg Grounding Score"
-        value={`${(stats.avg_grounding_score * 100).toFixed(1)}%`}
+        value={stats.avg_grounding_score != null ? `${(stats.avg_grounding_score * 100).toFixed(1)}%` : '—'}
       />
       <StatCard
         icon={<Zap className="h-5 w-5" style={{ color: 'var(--accent-primary)' }} />}

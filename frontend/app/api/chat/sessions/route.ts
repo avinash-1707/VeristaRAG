@@ -14,7 +14,7 @@ export async function GET(): Promise<NextResponse> {
   if (!res.ok) return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: res.status })
 
   const data = await res.json()
-  return NextResponse.json({ data })
+  return NextResponse.json(data)
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -41,5 +41,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const data = await res.json()
-  return NextResponse.json({ data }, { status: 201 })
+  return NextResponse.json(data, { status: 201 })
 }

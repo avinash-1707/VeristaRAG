@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Document
-from .serializers import CloudinarySignatureSerializer, DocumentCreateSerializer, DocumentSerializer
+from .serializers import DocumentCreateSerializer, DocumentSerializer
 from .tasks import process_document
 
 
@@ -53,19 +53,31 @@ class DocumentDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class DocumentRetryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, document_id: str) -> Response:
+        try:
+            doc = Document.objects.get(id=document_id, user=request.user)
+        except Document.DoesNotExist:
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        if doc.status == Document.STATUS_READY:
+            return Response({'error': 'Document already processed'}, status=status.HTTP_400_BAD_REQUEST)
+        doc.status = Document.STATUS_UPLOADED
+        doc.save(update_fields=['status'])
+        process_document.delay(str(doc.id))
+        return Response(DocumentSerializer(doc).data)
+
+
 class CloudinarySignatureView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request) -> Response:
-        serializer = CloudinarySignatureSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+    def get(self, request: Request) -> Response:
         timestamp = int(time.time())
         folder = f'veritasrag/{request.user.id}'
         params = {
             'timestamp': timestamp,
             'folder': folder,
-            'resource_type': 'raw',
         }
         cloudinary.config(cloudinary_url=settings.CLOUDINARY_URL)
         cfg = cloudinary.config()

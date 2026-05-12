@@ -22,5 +22,5 @@ export async function POST(): Promise<NextResponse> {
   store.delete('access_token')
   store.delete('refresh_token')
 
-  return NextResponse.json({ data: null })
+  return NextResponse.json(null)
 }

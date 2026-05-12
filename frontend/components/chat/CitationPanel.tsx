@@ -20,7 +20,7 @@ export default function CitationPanel({ citations, groundingScore }: CitationPan
 
   return (
     <aside
-      className="w-80 shrink-0 border-l flex flex-col"
+      className="w-[560px] shrink-0 border-l flex flex-col"
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border-default)',

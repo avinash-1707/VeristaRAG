@@ -14,7 +14,8 @@ export interface Document {
   file_type: string
   status: DocumentStatus
   chunk_count: number
-  created_at: string
+  file_size_bytes: number
+  uploaded_at: string
 }
 
 export interface ChatSession {
@@ -61,6 +62,7 @@ export interface QueryLog {
 export interface CloudinarySignature {
   signature: string
   timestamp: number
+  folder: string
   cloud_name: string
   api_key: string
   upload_preset?: string

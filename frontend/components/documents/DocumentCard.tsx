@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Trash2 } from 'lucide-react'
+import { FileText, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Document } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
@@ -9,15 +9,23 @@ import StatusBadge from './StatusBadge'
 interface DocumentCardProps {
   document: Document
   onDelete: (id: string) => Promise<void>
+  onRetry: (id: string) => Promise<void>
 }
 
-export default function DocumentCard({ document: doc, onDelete }: DocumentCardProps) {
+export default function DocumentCard({ document: doc, onDelete, onRetry }: DocumentCardProps) {
   const [deleting, setDeleting] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   async function handleDelete(): Promise<void> {
     setDeleting(true)
     await onDelete(doc.id)
     setDeleting(false)
+  }
+
+  async function handleRetry(): Promise<void> {
+    setRetrying(true)
+    await onRetry(doc.id)
+    setRetrying(false)
   }
 
   return (
@@ -59,13 +67,25 @@ export default function DocumentCard({ document: doc, onDelete }: DocumentCardPr
             </span>
           )}
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {formatDate(doc.created_at)}
+            {formatDate(doc.uploaded_at)}
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
         <StatusBadge status={doc.status} />
+        {doc.status === 'failed' && (
+          <button
+            onClick={handleRetry}
+            disabled={retrying}
+            className="p-1.5 rounded-lg transition-colors disabled:opacity-40"
+            style={{ color: 'var(--accent-primary)' }}
+            aria-label="Retry ingestion"
+            title="Retry ingestion"
+          >
+            <RefreshCw className={`h-4 w-4 ${retrying ? 'animate-spin' : ''}`} />
+          </button>
+        )}
         <button
           onClick={handleDelete}
           disabled={deleting}

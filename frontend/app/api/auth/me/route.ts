@@ -18,5 +18,5 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const data = await res.json()
-  return NextResponse.json({ data })
+  return NextResponse.json(data)
 }

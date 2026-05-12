@@ -17,6 +17,7 @@ class QueryRequest(BaseModel):
     question: str
     document_ids: list[str]
     session_id: str
+    history: list[dict] = []
 
 
 @router.post('/query')
@@ -38,7 +39,7 @@ async def query(
         reranked = await asyncio.get_event_loop().run_in_executor(
             None, rerank, request.question, raw_chunks, 5
         )
-        async for event in generate(request.question, reranked):
+        async for event in generate(request.question, reranked, history=request.history):
             yield event
 
     return StreamingResponse(_stream(), media_type='text/event-stream')

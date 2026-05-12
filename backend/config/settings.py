@@ -1,3 +1,4 @@
+import ssl
 from datetime import timedelta
 from pathlib import Path
 
@@ -99,6 +100,11 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TIMEZONE = 'UTC'
 
+if REDIS_URL.startswith('rediss://'):
+    _ssl_opts = {'ssl_cert_reqs': ssl.CERT_NONE}
+    CELERY_BROKER_USE_SSL = _ssl_opts
+    CELERY_REDIS_BACKEND_USE_SSL = _ssl_opts
+
 # ── Cache ────────────────────────────────────────────────────────────────────
 CACHES = {
     'default': {
@@ -119,7 +125,7 @@ REST_FRAMEWORK = {
 
 # ── SimpleJWT ────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,

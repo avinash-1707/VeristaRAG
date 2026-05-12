@@ -1,5 +1,7 @@
 import io
+import time
 from typing import NamedTuple
+from urllib.parse import urlparse
 
 import cloudinary
 import cloudinary.utils
@@ -14,8 +16,19 @@ class ExtractedPage(NamedTuple):
 
 
 async def fetch_file(storage_key: str, cloudinary_url: str) -> bytes:
-    cloudinary.config(cloudinary_url=cloudinary_url)
-    url = cloudinary.utils.cloudinary_url(storage_key, resource_type='raw')[0]
+    parsed = urlparse(cloudinary_url)
+    cloudinary.config(
+        cloud_name=parsed.hostname,
+        api_key=parsed.username,
+        api_secret=parsed.password,
+    )
+    url = cloudinary.utils.private_download_url(
+        storage_key,
+        format=None,
+        resource_type='raw',
+        type='upload',
+        expires_at=int(time.time()) + 600,
+    )
     async with httpx.AsyncClient() as client:
         response = await client.get(url, follow_redirects=True, timeout=60.0)
         response.raise_for_status()

@@ -4,6 +4,7 @@ import logging
 import time
 
 import httpx
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.core.cache import cache
 from rest_framework import status
@@ -92,28 +93,39 @@ class QueryView(APIView):
             self._persist(request.user, session_id, question, doc_ids, payload, latency_ms, cache_hit=True)
             return Response({**payload, 'cache_hit': True, 'latency_ms': latency_ms})
 
-        # ── Cache miss → stream from FastAPI ─────────────────────────────
-        def _stream():
-            nonlocal start_ts
+        # ── Fetch conversation history (sync ORM, fine in sync view) ──────
+        prior_messages = list(
+            Message.objects.filter(session_id=session_id).order_by('-created_at')[:20]
+        )
+        history = [
+            {'role': m.role, 'content': m.content}
+            for m in reversed(prior_messages)
+        ]
+
+        user = request.user
+
+        # ── Cache miss → async stream from FastAPI ────────────────────────
+        async def _stream():
             buffer: list[str] = []
             try:
-                with httpx.stream(
-                    'POST',
-                    f'{settings.AI_SERVICE_URL}/query',
-                    json={
-                        'question': question,
-                        'document_ids': doc_ids,
-                        'session_id': session_id,
-                    },
-                    headers={'X-Internal-Key': settings.INTERNAL_API_KEY},
-                    timeout=60.0,
-                ) as resp:
-                    resp.raise_for_status()
-                    for chunk in resp.iter_text():
-                        buffer.append(chunk)
-                        yield chunk
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    async with client.stream(
+                        'POST',
+                        f'{settings.AI_SERVICE_URL}/query',
+                        json={
+                            'question': question,
+                            'document_ids': doc_ids,
+                            'session_id': session_id,
+                            'history': history,
+                        },
+                        headers={'X-Internal-Key': settings.INTERNAL_API_KEY},
+                    ) as resp:
+                        resp.raise_for_status()
+                        async for chunk in resp.aiter_text():
+                            buffer.append(chunk)
+                            yield chunk
 
-            except Exception as exc:
+            except Exception:
                 logger.exception('Query stream failed')
                 yield f'data: {json.dumps({"error": "Query failed"})}\n\n'
                 return
@@ -121,9 +133,23 @@ class QueryView(APIView):
             full_response = ''.join(buffer)
             latency_ms = int((time.monotonic() - start_ts) * 1000)
             try:
-                payload = json.loads(full_response.split('data: ')[-1])
-                cache.set(cache_key, json.dumps(payload), QUERY_CACHE_TTL)
-                self._persist(request.user, session_id, question, doc_ids, payload, latency_ms, cache_hit=False)
+                payload = None
+                for line in full_response.splitlines():
+                    if not line.startswith('data: '):
+                        continue
+                    try:
+                        event = json.loads(line[6:])
+                        if event.get('done'):
+                            payload = event
+                    except json.JSONDecodeError:
+                        continue
+                if payload:
+                    await sync_to_async(cache.set)(cache_key, json.dumps(payload), QUERY_CACHE_TTL)
+                    await sync_to_async(self._persist)(
+                        user, session_id, question, doc_ids, payload, latency_ms, cache_hit=False
+                    )
+                else:
+                    logger.warning('No done event found in stream response')
             except Exception:
                 logger.exception('Failed to cache/persist query result')
 
@@ -161,7 +187,9 @@ class QueryView(APIView):
                     citation_order=i,
                 )
             except Chunk.DoesNotExist:
-                pass
+                logger.warning('Citation chunk not found: %s', citation_data.get('chunk_id'))
+            except Exception:
+                logger.exception('Failed to create citation for chunk %s', citation_data.get('chunk_id'))
 
         QueryLog.objects.create(
             user=user,

@@ -49,9 +49,10 @@ class QueryLogListView(APIView):
         return Response([
             {
                 'id': str(q.id),
-                'question_text': q.question_text,
+                'question': q.question_text,
                 'latency_ms': q.latency_ms,
                 'grounding_score': q.grounding_score,
+                'top_similarity_score': q.top_similarity_score,
                 'cache_hit': q.cache_hit,
                 'low_confidence': q.low_confidence,
                 'model_used': q.model_used,

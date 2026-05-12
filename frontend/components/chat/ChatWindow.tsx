@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BookOpen } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Citation, Message, StreamEvent } from '@/lib/types'
 import MessageBubble from './MessageBubble'
@@ -30,8 +32,22 @@ export default function ChatWindow({
   const [streaming, setStreaming] = useState<StreamingState | null>(null)
   const [activeCitations, setActiveCitations] = useState<Citation[]>([])
   const [activeGrounding, setActiveGrounding] = useState<number>(0)
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const handleMessageClick = useCallback((msg: Message) => {
+    if (!msg.citations?.length) return
+    if (activeMessageId === msg.id) {
+      setActiveCitations([])
+      setActiveGrounding(0)
+      setActiveMessageId(null)
+      return
+    }
+    setActiveCitations(msg.citations)
+    setActiveGrounding(msg.grounding_score ?? 0)
+    setActiveMessageId(msg.id)
+  }, [activeMessageId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -112,6 +128,7 @@ export default function ChatWindow({
             setStreaming(null)
             setActiveCitations(event.citations ?? [])
             setActiveGrounding(event.grounding_score ?? 0)
+            setActiveMessageId(assistantMsg.id)
           }
         }
       }
@@ -161,7 +178,12 @@ export default function ChatWindow({
             </div>
           )}
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} />
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isActive={activeMessageId === msg.id}
+              onCitationsOpen={() => handleMessageClick(msg)}
+            />
           ))}
           {streaming && !streaming.done && (
             <div className="flex justify-start mb-4">
@@ -174,7 +196,11 @@ export default function ChatWindow({
                   color: 'var(--text-primary)',
                 }}
               >
-                {streaming.content || (
+                {streaming.content ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p> }}>
+                    {streaming.content}
+                  </ReactMarkdown>
+                ) : (
                   <span className="animate-pulse" style={{ color: 'var(--text-muted)' }}>
                     Thinking…
                   </span>

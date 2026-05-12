@@ -53,7 +53,7 @@ export default function UploadDialog({ open, onClose }: UploadDialogProps) {
     formData.append('signature', sig.signature)
     formData.append('timestamp', String(sig.timestamp))
     formData.append('api_key', sig.api_key)
-    formData.append('resource_type', 'raw')
+    formData.append('folder', sig.folder)
 
     const cloudRes = await fetch(
       `https://api.cloudinary.com/v1_1/${sig.cloud_name}/raw/upload`,
@@ -72,6 +72,7 @@ export default function UploadDialog({ open, onClose }: UploadDialogProps) {
       filename: file.name,
       storage_key: cloudData.public_id,
       file_type: fileType(file),
+      file_size_bytes: file.size,
     })
 
     if ('error' in docResult) {

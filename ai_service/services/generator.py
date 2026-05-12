@@ -11,8 +11,9 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _client: genai.Client | None = None
-_LOW_SIMILARITY_THRESHOLD = 0.1
+_LOW_SIMILARITY_THRESHOLD = 0.05
 _LOW_GROUNDING_THRESHOLD = 0.6
+_MAX_HISTORY_TURNS = 10
 
 _SYSTEM_PROMPT = (
     'You are a precise document assistant. '
@@ -43,16 +44,26 @@ def _build_context(chunks: list[dict[str, Any]]) -> str:
     return '\n\n---\n\n'.join(parts)
 
 
-def _compute_grounding_score(chunks: list[dict[str, Any]]) -> float:
-    if not chunks:
-        return 0.0
-    scores = [c.get('similarity_score', 0.0) for c in chunks]
-    return round(sum(scores) / len(scores), 4)
+def _build_contents(
+    question: str,
+    context: str,
+    history: list[dict[str, Any]],
+) -> list[types.Content]:
+    contents: list[types.Content] = []
+    for msg in history[-_MAX_HISTORY_TURNS:]:
+        role = 'user' if msg['role'] == 'user' else 'model'
+        contents.append(types.Content(role=role, parts=[types.Part(text=msg['content'])]))
+    contents.append(types.Content(
+        role='user',
+        parts=[types.Part(text=f'Source excerpts:\n\n{context}\n\nQuestion: {question}')],
+    ))
+    return contents
+
 
 
 async def _stream_with_fallback(
     client: genai.Client,
-    prompt: str,
+    contents: list[types.Content],
     answer_parts: list[str],
 ) -> AsyncIterator[str]:
     models = _get_models()
@@ -62,7 +73,7 @@ async def _stream_with_fallback(
         try:
             async for chunk in await client.aio.models.generate_content_stream(
                 model=model,
-                contents=prompt,
+                contents=contents,
                 config=types.GenerateContentConfig(system_instruction=_SYSTEM_PROMPT),
             ):
                 token = chunk.text or ''
@@ -88,21 +99,23 @@ async def _stream_with_fallback(
 async def generate(
     question: str,
     chunks: list[dict[str, Any]],
+    history: list[dict[str, Any]] | None = None,
 ) -> AsyncIterator[str]:
     client = _get_client()
     top_sim = max((c.get('rerank_score', c.get('similarity_score', 0.0)) for c in chunks), default=0.0)
-    grounding_score = _compute_grounding_score(chunks)
+    grounding_score = round(top_sim, 4)
     low_confidence = top_sim < _LOW_SIMILARITY_THRESHOLD
 
     context = _build_context(chunks)
-    prompt = f'Source excerpts:\n\n{context}\n\nQuestion: {question}'
+    contents = _build_contents(question, context, history or [])
 
     citations = [
         {
             'chunk_id': c['chunk_id'],
             'document_name': c['document_name'],
             'page_number': c['page_number'],
-            'similarity_score': round(c.get('similarity_score', 0.0), 4),
+            'similarity_score': round(c.get('rerank_score', c.get('similarity_score', 0.0)), 4),
+            'content': c.get('content', ''),
         }
         for c in chunks
     ]
@@ -118,7 +131,7 @@ async def generate(
         answer_parts.append(answer)
     else:
         try:
-            async for event in _stream_with_fallback(client, prompt, answer_parts):
+            async for event in _stream_with_fallback(client, contents, answer_parts):
                 if event.startswith('__model__:'):
                     model_used = event[len('__model__:'):]
                 else:

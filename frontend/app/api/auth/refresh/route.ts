@@ -30,7 +30,7 @@ export async function POST(): Promise<NextResponse> {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 15 * 60,
+    maxAge: 60 * 60,
   })
 
   if (data.refresh) {
@@ -43,5 +43,5 @@ export async function POST(): Promise<NextResponse> {
     })
   }
 
-  return NextResponse.json({ data: { access: data.access } })
+  return NextResponse.json({ access: data.access })
 }

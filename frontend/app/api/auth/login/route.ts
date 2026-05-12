@@ -32,7 +32,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 15 * 60,
+    maxAge: 60 * 60,
   })
   store.set('refresh_token', data.refresh, {
     httpOnly: true,
@@ -42,5 +42,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     maxAge: 7 * 24 * 60 * 60,
   })
 
-  return NextResponse.json({ data: data.user })
+  return NextResponse.json(data.user)
 }

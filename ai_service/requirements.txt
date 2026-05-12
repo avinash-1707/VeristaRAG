@@ -7,7 +7,8 @@ cloudinary==1.44.2
 # Google AI (embedding + generation)
 google-genai==2.0.1
 # Reranker
-sentence-transformers==5.4.1
+cohere==5.15.0
+fastembed==0.8.0
 # Document extraction
 pdfplumber==0.11.9
 python-docx==1.2.0

@@ -47,8 +47,8 @@ async def ingest(
                 chunk_id = str(uuid.uuid4())
                 await conn.execute(
                     '''
-                    INSERT INTO chunks (id, document_id, chunk_index, content, token_count, page_number, section_heading)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    INSERT INTO chunks (id, document_id, chunk_index, content, token_count, page_number, section_heading, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
                     ''',
                     chunk_id,
                     request.document_id,
@@ -61,13 +61,13 @@ async def ingest(
                 vector_str = '[' + ','.join(str(v) for v in emb) + ']'
                 await conn.execute(
                     '''
-                    INSERT INTO embeddings (id, chunk_id, embedding_768, model_name)
-                    VALUES ($1, $2, $3::vector, $4)
+                    INSERT INTO embeddings (id, chunk_id, embedding_768, model_name, created_at)
+                    VALUES ($1, $2, $3::vector, $4, NOW())
                     ''',
                     str(uuid.uuid4()),
                     chunk_id,
                     vector_str,
-                    'text-embedding-004',
+                    'gemini-embedding-001',
                 )
 
     return IngestResponse(chunk_count=len(chunks))

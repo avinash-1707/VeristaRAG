@@ -14,5 +14,5 @@ export async function GET(): Promise<NextResponse> {
   if (!res.ok) return NextResponse.json({ error: 'Failed to fetch stats' }, { status: res.status })
 
   const data = await res.json()
-  return NextResponse.json({ data })
+  return NextResponse.json(data)
 }

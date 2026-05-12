@@ -13,6 +13,7 @@ type ApiResult<T> = { data: T } | { error: string }
 async function apiFetch<T>(
   path: string,
   init?: RequestInit,
+  retry = true,
 ): Promise<ApiResult<T>> {
   const res = await fetch(path, {
     ...init,
@@ -23,6 +24,17 @@ async function apiFetch<T>(
   })
 
   const body = await res.json().catch(() => ({}))
+
+  if (res.status === 401 && retry) {
+    const refreshRes = await fetch('/api/auth/refresh', { method: 'POST' })
+    if (refreshRes.ok) {
+      return apiFetch<T>(path, init, false)
+    }
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+    return { error: 'Session expired' }
+  }
 
   if (!res.ok) {
     return { error: (body as { error?: string }).error ?? 'Request failed' }
@@ -64,10 +76,15 @@ export async function deleteDocumentApi(id: string): Promise<ApiResult<void>> {
   return apiFetch<void>(`/api/documents/${id}`, { method: 'DELETE' })
 }
 
+export async function retryDocumentApi(id: string): Promise<ApiResult<Document>> {
+  return apiFetch<Document>(`/api/documents/${id}/retry`, { method: 'POST' })
+}
+
 export async function createDocumentApi(payload: {
   filename: string
   storage_key: string
   file_type: string
+  file_size_bytes: number
 }): Promise<ApiResult<Document>> {
   return apiFetch<Document>('/api/documents', {
     method: 'POST',

@@ -16,7 +16,7 @@ def _get_client() -> genai.Client:
 async def embed(texts: list[str]) -> list[list[float]]:
     client = _get_client()
     response = await client.aio.models.embed_content(
-        model='text-embedding-004',
+        model='gemini-embedding-001',
         contents=texts,
         config=types.EmbedContentConfig(output_dimensionality=768),
     )

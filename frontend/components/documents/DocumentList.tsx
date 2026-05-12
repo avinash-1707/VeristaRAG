@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookOpen } from 'lucide-react'
-import { deleteDocumentApi, getDocumentsApi } from '@/lib/api'
+import { deleteDocumentApi, getDocumentsApi, retryDocumentApi } from '@/lib/api'
 import type { Document } from '@/lib/types'
 import DocumentCard from './DocumentCard'
 
@@ -26,6 +26,11 @@ export default function DocumentList() {
 
   async function handleDelete(id: string): Promise<void> {
     await deleteDocumentApi(id)
+    qc.invalidateQueries({ queryKey: ['documents'] })
+  }
+
+  async function handleRetry(id: string): Promise<void> {
+    await retryDocumentApi(id)
     qc.invalidateQueries({ queryKey: ['documents'] })
   }
 
@@ -58,7 +63,7 @@ export default function DocumentList() {
   return (
     <div className="space-y-3">
       {documents.map((doc) => (
-        <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} />
+        <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} onRetry={handleRetry} />
       ))}
     </div>
   )

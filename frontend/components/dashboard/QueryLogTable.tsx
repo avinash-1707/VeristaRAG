@@ -56,7 +56,8 @@ export default function QueryLogTable() {
         </thead>
         <tbody>
           {logs.map((log, i) => {
-            const level = groundingLabel(log.grounding_score)
+            const grounding = log.grounding_score ?? 0
+            const level = groundingLabel(grounding)
             return (
               <tr
                 key={log.id}
@@ -65,18 +66,18 @@ export default function QueryLogTable() {
                 }}
               >
                 <td className="py-3 pr-4" style={{ color: 'var(--text-primary)' }}>
-                  {truncate(log.question, 60)}
+                  {truncate(log.question ?? '', 60)}
                 </td>
                 <td className="py-3 pr-4">
                   <span
                     className="text-xs font-medium"
                     style={{ color: groundingColors[level] }}
                   >
-                    {(log.grounding_score * 100).toFixed(1)}%
+                    {(grounding * 100).toFixed(1)}%
                   </span>
                 </td>
                 <td className="py-3 pr-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {(log.top_similarity_score * 100).toFixed(1)}%
+                  {log.top_similarity_score != null ? `${(log.top_similarity_score * 100).toFixed(1)}%` : '—'}
                 </td>
                 <td className="py-3 pr-4">
                   {log.cache_hit && (

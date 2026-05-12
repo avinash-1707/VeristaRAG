@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { Citation } from '@/lib/types'
 
 interface CitationCardProps {
@@ -61,12 +63,28 @@ export default function CitationCard({ citation, index }: CitationCardProps) {
       </div>
 
       {expanded && citation.content && (
-        <p
-          className="mt-2 text-xs font-mono leading-relaxed"
-          style={{ color: 'var(--text-secondary)' }}
+        <div
+          className="mt-2 text-xs leading-relaxed border-t pt-2"
+          style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
         >
-          {citation.content}
-        </p>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc pl-3 mb-1.5 space-y-0.5">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal pl-3 mb-1.5 space-y-0.5">{children}</ol>,
+              li: ({ children }) => <li>{children}</li>,
+              strong: ({ children }) => <strong className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</strong>,
+              code: ({ children }) => (
+                <code className="rounded px-0.5 font-mono" style={{ background: 'var(--bg-base)', color: 'var(--accent-bright)' }}>
+                  {children}
+                </code>
+              ),
+            }}
+          >
+            {citation.content}
+          </ReactMarkdown>
+        </div>
       )}
     </div>
   )
