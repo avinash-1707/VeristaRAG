@@ -1,12 +1,11 @@
 'use client'
 
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Shield,
   Zap,
-  Sparkles,
   FileText,
   Upload,
   Search,
@@ -16,10 +15,8 @@ import {
   CheckCircle2,
   ChevronRight,
   ChevronDown,
-  Star,
   Menu,
   X,
-  BarChart3,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,11 +35,19 @@ type Particle = {
 
 const EASE_EXPO = [0.19, 1, 0.22, 1] as const
 
+const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
+  id: i,
+  x: (i * 41 + 17) % 100,
+  y: (i * 29 + 11) % 100,
+  size: (i % 3) + 1,
+  duration: 3.5 + (i % 5),
+  delay: (i * 0.27) % 5,
+  opacity: 0.05 + (i % 5) * 0.025,
+}))
+
 const NAV_LINKS = [
   { label: 'Features', id: 'features' },
   { label: 'Process', id: 'process' },
-  { label: 'Testimonials', id: 'testimonials' },
-  { label: 'Pricing', id: 'pricing' },
   { label: 'FAQ', id: 'faq' },
 ]
 
@@ -95,63 +100,6 @@ const STEPS = [
     step: '03',
     title: 'Get Cited Answers',
     desc: 'Grounded answers with exact citations: document, page, chunk, similarity score. Low confidence? A warning tells you.',
-  },
-]
-
-const TESTIMONIALS = [
-  {
-    name: 'James L.',
-    role: 'PhD Researcher · Stanford',
-    initial: 'J',
-    quote:
-      'VeritasRAG changed how I work with research papers. I upload 30 PDFs and ask cross-document questions in seconds — with exact page citations every time.',
-    rating: 5,
-  },
-  {
-    name: 'Michael R.',
-    role: 'Product Manager · Series B',
-    initial: 'M',
-    quote:
-      "I needed to extract insights from 200-page compliance reports. VeritasRAG gives me direct, grounded answers with the exact passage highlighted. It's genuinely magic.",
-    rating: 5,
-  },
-  {
-    name: 'Emily S.',
-    role: 'Legal Analyst · Corporate Law',
-    initial: 'E',
-    quote:
-      'The citation feature is what sold me. I can see exactly which contract clause every answer comes from. The confidence score tells me when to dig deeper.',
-    rating: 5,
-  },
-]
-
-const PRICING = [
-  {
-    name: 'Starter',
-    price: 'Free',
-    period: '',
-    desc: 'Perfect for exploring document Q&A with no commitment.',
-    features: ['5 documents', '50 queries / month', 'PDF, DOCX, TXT', 'Citation panel', '7-day history'],
-    cta: 'Get Started Free',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: '$29',
-    period: '/mo',
-    desc: 'For researchers and professionals who live in documents.',
-    features: ['Unlimited documents', 'Unlimited queries', 'Priority pipeline', 'Full history', 'Cache analytics', 'API access'],
-    cta: 'Start Pro Trial',
-    highlighted: true,
-  },
-  {
-    name: 'Team',
-    price: '$99',
-    period: '/mo',
-    desc: 'For teams that need shared document knowledge.',
-    features: ['Everything in Pro', 'Up to 10 users', 'Shared library', 'Admin analytics', 'SSO ready', 'Priority support'],
-    cta: 'Contact Sales',
-    highlighted: false,
   },
 ]
 
@@ -647,25 +595,10 @@ function FAQItem({
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const [particles, setParticles] = useState<Particle[]>([])
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { scrollY } = useScroll()
   const heroY = useTransform(scrollY, [0, 600], [0, -80])
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
-
-  useEffect(() => {
-    setParticles(
-      Array.from({ length: 20 }, (_, i) => ({
-        id: i,
-        x: (i * 41 + 17) % 100,
-        y: (i * 29 + 11) % 100,
-        size: (i % 3) + 1,
-        duration: 3.5 + (i % 5),
-        delay: (i * 0.27) % 5,
-        opacity: 0.05 + (i % 5) * 0.025,
-      }))
-    )
-  }, [])
 
   return (
     <div
@@ -840,7 +773,7 @@ export default function LandingPage() {
         />
 
         {/* Particles */}
-        {particles.map((p) => (
+        {PARTICLES.map((p) => (
           <motion.div
             key={p.id}
             className="absolute rounded-full pointer-events-none"
@@ -1181,281 +1114,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── TESTIMONIALS ───────────────────────────── */}
-      <section id="testimonials" className="py-28 px-6 md:px-12 relative">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 50% 40% at 50% 50%, rgba(212,88,10,0.04) 0%, transparent 70%)',
-          }}
-        />
-        <div className="relative max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.65, ease: EASE_EXPO }}
-            className="text-center mb-16"
-          >
-            <PillLabel>Testimonials</PillLabel>
-            <h2
-              className="text-3xl md:text-4xl font-bold tracking-tight mb-3"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              What users are saying.
-            </h2>
-            <p
-              className="text-sm max-w-sm mx-auto"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Researchers, analysts, and professionals getting grounded answers from their docs.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 32 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ delay: i * 0.1, duration: 0.65, ease: EASE_EXPO }}
-                className="group relative overflow-hidden"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 24,
-                  padding: '28px',
-                  transition: 'border-color 300ms, box-shadow 300ms',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-accent)'
-                  e.currentTarget.style.boxShadow = '0 0 40px 6px var(--glow-soft)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-default)'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                {/* Bottom glow */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse 70% 55% at 50% 110%, rgba(212,88,10,0.12) 0%, transparent 65%)',
-                    borderRadius: 24,
-                  }}
-                />
-
-                <div className="relative">
-                  {/* Stars */}
-                  <div className="flex gap-0.5 mb-5">
-                    {Array.from({ length: t.rating }).map((_, j) => (
-                      <Star
-                        key={j}
-                        className="h-3.5 w-3.5 fill-current"
-                        style={{ color: 'var(--accent-primary)' }}
-                      />
-                    ))}
-                  </div>
-
-                  <p
-                    className="text-sm leading-relaxed mb-6"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-
-                  {/* Author */}
-                  <div className="flex items-center gap-3">
-                    <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, rgba(212,88,10,0.65), rgba(10,8,4,0.95))',
-                        border: '1px solid var(--border-accent)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span className="text-xs font-bold text-white">{t.initial}</span>
-                    </div>
-                    <div>
-                      <p
-                        className="text-xs font-semibold"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {t.name}
-                      </p>
-                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                        {t.role}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── PRICING ────────────────────────────────── */}
-      <section
-        id="pricing"
-        className="py-28 px-6 md:px-12 relative overflow-hidden"
-        style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 55% 50% at 50% 50%, rgba(212,88,10,0.05) 0%, transparent 70%)',
-          }}
-        />
-        <div className="relative max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.65, ease: EASE_EXPO }}
-            className="text-center mb-16"
-          >
-            <PillLabel>Pricing</PillLabel>
-            <h2
-              className="text-3xl md:text-4xl font-bold tracking-tight mb-3"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Straightforward pricing that fits.
-            </h2>
-            <p
-              className="text-sm max-w-md mx-auto"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Whether you&apos;re exploring RAG for the first time or scaling your knowledge infrastructure.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-            {PRICING.map((plan, i) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 32 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ delay: i * 0.1, duration: 0.65, ease: EASE_EXPO }}
-                className="relative overflow-hidden"
-                style={{
-                  background: plan.highlighted ? 'var(--bg-surface-elevated)' : 'var(--bg-surface)',
-                  border: plan.highlighted
-                    ? '1px solid var(--border-accent)'
-                    : '1px solid var(--border-default)',
-                  borderRadius: 24,
-                  padding: '28px',
-                  boxShadow: plan.highlighted
-                    ? '0 0 60px 10px var(--glow-soft)'
-                    : 'none',
-                }}
-              >
-                {plan.highlighted && (
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background:
-                        'radial-gradient(ellipse 80% 55% at 50% 110%, rgba(212,88,10,0.22) 0%, transparent 65%)',
-                      borderRadius: 24,
-                    }}
-                  />
-                )}
-
-                {plan.highlighted && (
-                  <div
-                    className="absolute top-4 right-4 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full"
-                    style={{
-                      background: 'var(--accent-subtle)',
-                      border: '1px solid var(--border-accent)',
-                      color: 'var(--accent-bright)',
-                    }}
-                  >
-                    Popular
-                  </div>
-                )}
-
-                <div className="relative">
-                  <p
-                    className="text-sm font-semibold mb-1"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    {plan.name} Plan
-                  </p>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span
-                      className="text-3xl font-bold"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      {plan.price}
-                    </span>
-                    {plan.period && (
-                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {plan.period}
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className="text-xs leading-relaxed mb-6"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    {plan.desc}
-                  </p>
-
-                  <Link
-                    href="/signup"
-                    className="block w-full text-center text-sm font-semibold py-3 rounded-full mb-6 transition-all duration-150"
-                    style={
-                      plan.highlighted
-                        ? {
-                            background: 'linear-gradient(135deg, #d4580a, #b84208)',
-                            color: 'white',
-                            boxShadow:
-                              '0 0 20px 6px rgba(212,88,10,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
-                          }
-                        : {
-                            background: 'transparent',
-                            color: 'var(--text-primary)',
-                            border: '1px solid var(--border-strong)',
-                          }
-                    }
-                  >
-                    {plan.cta}
-                  </Link>
-
-                  <div className="space-y-2.5">
-                    {plan.features.map((feat) => (
-                      <div key={feat} className="flex items-center gap-2">
-                        <CheckCircle2
-                          className="h-3.5 w-3.5 flex-shrink-0"
-                          style={{
-                            color: plan.highlighted
-                              ? 'var(--accent-primary)'
-                              : 'var(--state-success)',
-                          }}
-                        />
-                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                          {feat}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ─── FAQ ────────────────────────────────────── */}
       <section
         id="faq"
@@ -1631,7 +1289,7 @@ export default function LandingPage() {
                 Product
               </p>
               <div className="space-y-2.5">
-                {['Features', 'Process', 'Pricing', 'FAQ', 'Testimonials'].map((item) => (
+                {['Features', 'Process', 'FAQ'].map((item) => (
                   <a
                     key={item}
                     href={`#${item.toLowerCase()}`}
