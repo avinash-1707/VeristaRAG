@@ -1,0 +1,107 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-backend:
+    name: Django Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: veritasrag_test
+          POSTGRES_USER: veritasrag
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: ./backend
+        run: pip install -r requirements.txt
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://veritasrag:testpassword@localhost:5432/veritasrag_test
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: ci-test-secret-key-not-for-production
+          DEBUG: "True"
+          INTERNAL_API_KEY: ci-test-internal-key
+          AI_SERVICE_URL: http://localhost:8001
+          CLOUDINARY_URL: cloudinary://key:secret@cloud
+        run: python manage.py test
+
+  test-ai-service:
+    name: FastAPI Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: ./ai_service
+        run: pip install -r requirements.txt pytest pytest-asyncio httpx
+      - name: Run tests
+        working-directory: ./ai_service
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          INTERNAL_API_KEY: ci-test-internal-key
+          GOOGLE_API_KEY: test-key
+          CLOUDINARY_URL: cloudinary://key:secret@cloud
+        run: pytest
+
+  build-frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+      - name: Type check + build
+        working-directory: ./frontend
+        run: pnpm run build
+
+  deploy:
+    name: Deploy to Render
+    needs: [test-backend, test-ai-service, build-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy Django API
+        run: curl --fail -s "${{ secrets.RENDER_DEPLOY_HOOK_API }}"
+      - name: Deploy AI Service
+        run: curl --fail -s "${{ secrets.RENDER_DEPLOY_HOOK_AI }}"
+      - name: Deploy Celery Worker
+        run: curl --fail -s "${{ secrets.RENDER_DEPLOY_HOOK_WORKER }}"
