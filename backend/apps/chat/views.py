@@ -172,7 +172,7 @@ class QueryView(APIView):
             top_similarity_score=payload.get('top_similarity_score'),
             grounding_score=grounding_score,
             cache_hit=cache_hit,
-            model_used='gemini-2.0-flash',
+            model_used=payload.get('model_used', 'unknown'),
             low_confidence=(grounding_score is not None and grounding_score < 0.6),
         )
 

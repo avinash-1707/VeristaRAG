@@ -1,13 +1,17 @@
 import json
+import logging
 from typing import Any, AsyncIterator
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 
 from config import settings
 
+logger = logging.getLogger(__name__)
+
 _client: genai.Client | None = None
-_LOW_SIMILARITY_THRESHOLD = 0.75
+_LOW_SIMILARITY_THRESHOLD = 0.1
 _LOW_GROUNDING_THRESHOLD = 0.6
 
 _SYSTEM_PROMPT = (
@@ -26,6 +30,10 @@ def _get_client() -> genai.Client:
     return _client
 
 
+def _get_models() -> list[str]:
+    return [m.strip() for m in settings.gemini_chat_models.split(',') if m.strip()]
+
+
 def _build_context(chunks: list[dict[str, Any]]) -> str:
     parts: list[str] = []
     for i, c in enumerate(chunks, start=1):
@@ -42,12 +50,47 @@ def _compute_grounding_score(chunks: list[dict[str, Any]]) -> float:
     return round(sum(scores) / len(scores), 4)
 
 
+async def _stream_with_fallback(
+    client: genai.Client,
+    prompt: str,
+    answer_parts: list[str],
+) -> AsyncIterator[str]:
+    models = _get_models()
+    last_exc: Exception | None = None
+
+    for model in models:
+        try:
+            async for chunk in await client.aio.models.generate_content_stream(
+                model=model,
+                contents=prompt,
+                config=types.GenerateContentConfig(system_instruction=_SYSTEM_PROMPT),
+            ):
+                token = chunk.text or ''
+                if token:
+                    answer_parts.append(token)
+                    yield f'data: {json.dumps({"token": token})}\n\n'
+            yield f'__model__:{model}'
+            return
+        except genai_errors.ClientError as exc:
+            if exc.code == 429:
+                logger.warning('Model %s quota exhausted, trying next', model)
+                last_exc = exc
+                continue
+            raise
+        except Exception as exc:
+            logger.warning('Model %s failed (%s), trying next', model, exc)
+            last_exc = exc
+            continue
+
+    raise RuntimeError('All Gemini models exhausted') from last_exc
+
+
 async def generate(
     question: str,
     chunks: list[dict[str, Any]],
 ) -> AsyncIterator[str]:
     client = _get_client()
-    top_sim = max((c.get('similarity_score', 0.0) for c in chunks), default=0.0)
+    top_sim = max((c.get('rerank_score', c.get('similarity_score', 0.0)) for c in chunks), default=0.0)
     grounding_score = _compute_grounding_score(chunks)
     low_confidence = top_sim < _LOW_SIMILARITY_THRESHOLD
 
@@ -65,6 +108,7 @@ async def generate(
     ]
 
     answer_parts: list[str] = []
+    model_used = _get_models()[0]
 
     if low_confidence:
         answer = (
@@ -73,15 +117,17 @@ async def generate(
         yield f'data: {json.dumps({"token": answer})}\n\n'
         answer_parts.append(answer)
     else:
-        async for chunk in await client.aio.models.generate_content_stream(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(system_instruction=_SYSTEM_PROMPT),
-        ):
-            token = chunk.text or ''
-            if token:
-                answer_parts.append(token)
-                yield f'data: {json.dumps({"token": token})}\n\n'
+        try:
+            async for event in _stream_with_fallback(client, prompt, answer_parts):
+                if event.startswith('__model__:'):
+                    model_used = event[len('__model__:'):]
+                else:
+                    yield event
+        except Exception as exc:
+            logger.exception('All models failed: %s', exc)
+            error_msg = 'Service temporarily unavailable. Please try again in a moment.'
+            yield f'data: {json.dumps({"token": error_msg})}\n\n'
+            answer_parts.append(error_msg)
 
     full_answer = ''.join(answer_parts)
     final = {
@@ -89,5 +135,6 @@ async def generate(
         'citations': citations,
         'grounding_score': grounding_score if not low_confidence else 0.0,
         'top_similarity_score': round(top_sim, 4),
+        'model_used': model_used,
     }
     yield f'data: {json.dumps({"done": True, **final})}\n\n'
