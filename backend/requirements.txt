@@ -9,3 +9,4 @@ redis==7.4.0
 celery==5.6.3
 httpx==0.28.1
 cloudinary==1.44.2
+pgvector==0.4.2

@@ -4,3 +4,12 @@ pydantic-settings==2.14.1
 asyncpg==0.31.0
 httpx==0.28.1
 cloudinary==1.44.2
+# Google AI (embedding + generation)
+google-genai==2.0.1
+# Reranker
+sentence-transformers==5.4.1
+# Document extraction
+pdfplumber==0.11.9
+python-docx==1.2.0
+# Tokenization for chunker
+tiktoken==0.12.0

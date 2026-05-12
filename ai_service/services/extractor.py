@@ -1,4 +1,11 @@
+import io
 from typing import NamedTuple
+
+import cloudinary
+import cloudinary.utils
+import httpx
+import pdfplumber
+from docx import Document as DocxDocument
 
 
 class ExtractedPage(NamedTuple):
@@ -6,10 +13,41 @@ class ExtractedPage(NamedTuple):
     text: str
 
 
-def extract(file_bytes: bytes, file_type: str) -> list[ExtractedPage]:
-    """Extract text pages from a document.
+async def fetch_file(storage_key: str, cloudinary_url: str) -> bytes:
+    cloudinary.config(cloudinary_url=cloudinary_url)
+    url = cloudinary.utils.cloudinary_url(storage_key, resource_type='raw')[0]
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, follow_redirects=True, timeout=60.0)
+        response.raise_for_status()
+        return response.content
 
-    Implemented in Unit 07 (fastapi-ingest).
-    Supports file_type: 'pdf', 'docx', 'txt'.
-    """
-    raise NotImplementedError
+
+def extract(file_bytes: bytes, file_type: str) -> list[ExtractedPage]:
+    if file_type == 'pdf':
+        return _extract_pdf(file_bytes)
+    elif file_type == 'docx':
+        return _extract_docx(file_bytes)
+    elif file_type == 'txt':
+        return _extract_txt(file_bytes)
+    raise ValueError(f'Unsupported file type: {file_type}')
+
+
+def _extract_pdf(file_bytes: bytes) -> list[ExtractedPage]:
+    pages: list[ExtractedPage] = []
+    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+        for i, page in enumerate(pdf.pages, start=1):
+            text = page.extract_text() or ''
+            if text.strip():
+                pages.append(ExtractedPage(page_number=i, text=text))
+    return pages
+
+
+def _extract_docx(file_bytes: bytes) -> list[ExtractedPage]:
+    doc = DocxDocument(io.BytesIO(file_bytes))
+    full_text = '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
+    return [ExtractedPage(page_number=1, text=full_text)] if full_text else []
+
+
+def _extract_txt(file_bytes: bytes) -> list[ExtractedPage]:
+    text = file_bytes.decode('utf-8', errors='replace')
+    return [ExtractedPage(page_number=1, text=text)] if text.strip() else []
