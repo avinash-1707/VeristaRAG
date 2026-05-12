@@ -1,0 +1,121 @@
+context/
+
+# --- Secrets & local env (never commit) ---
+.env
+.env.*
+!.env.example
+!.env*.example
+*.pem
+
+# --- OS & editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+*.sublime-*
+
+# Optional: uncomment if the team does not commit editor workspace settings
+# .vscode/
+# !.vscode/extensions.json
+
+# --- Next.js / Node (frontend/) ---
+node_modules/
+.pnpm-debug.log*
+frontend/.next/
+frontend/out/
+.next/
+out/
+.turbo/
+dist/
+build/
+*.tsbuildinfo
+.vercel
+
+# Commit `frontend/pnpm-lock.yaml` and `frontend/next-env.d.ts` (Next + TypeScript).
+
+# --- Python (backend/, ai_service/, shared tooling) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.eggs/
+*.egg
+*.egg-info/
+pip-wheel-metadata/
+
+# Packaging / installers
+build/
+develop-eggs/
+downloads/
+eggs/
+parts/
+sdist/
+var/
+wheels/
+*.manifest
+*.spec
+
+# Tests & type-checking
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.tox/
+.nox/
+nosetests.xml
+test-results.xml
+junit.xml
+
+# Jupyter (if used for experiments)
+.ipynb_checkpoints/
+
+# ML / model caches (FastAPI reranker, Hugging Face, PyTorch, sentence-transformers)
+.cache/
+# Root-level weight dumps (do not use a bare `models/` rule — conflicts with Django `models` packages)
+/weights/
+/model_cache/
+/*.pt
+/*.pth
+/*.safetensors
+/*.onnx
+/*.bin
+
+# --- Django ---
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+backend/media/
+media/
+staticfiles/
+static_root/
+
+# --- Celery ---
+celerybeat-schedule
+celerybeat.pid
+
+# --- Docker & local infra (optional) ---
+docker-compose.override.yml
+redis-data/
+postgres-data/
+pgdata/
+
+# --- Misc project scratch ---
+tmp/
+temp/
+*.tmp
+*.bak
+.scratch/
