@@ -12,9 +12,9 @@ export default function CitationPanel({ citations, groundingScore }: CitationPan
   if (citations.length === 0) return null
 
   const progressColor =
-    groundingScore >= 0.75
+    groundingScore >= 0.5
       ? 'var(--state-success)'
-      : groundingScore >= 0.6
+      : groundingScore >= 0.2
         ? 'var(--state-warning)'
         : 'var(--state-error)'
 

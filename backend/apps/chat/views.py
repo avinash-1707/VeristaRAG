@@ -88,10 +88,14 @@ class QueryView(APIView):
         # ── Cache hit path ────────────────────────────────────────────────
         cached = cache.get(cache_key)
         if cached:
-            latency_ms = int((time.monotonic() - start_ts) * 1000)
             payload = json.loads(cached)
-            self._persist(request.user, session_id, question, doc_ids, payload, latency_ms, cache_hit=True)
-            return Response({**payload, 'cache_hit': True, 'latency_ms': latency_ms})
+            # Evict stale low-confidence entries cached by old code
+            if payload.get('grounding_score', 0) < 0.30:
+                cache.delete(cache_key)
+            else:
+                latency_ms = int((time.monotonic() - start_ts) * 1000)
+                self._persist(request.user, session_id, question, doc_ids, payload, latency_ms, cache_hit=True)
+                return Response({**payload, 'cache_hit': True, 'latency_ms': latency_ms})
 
         # ── Fetch conversation history (sync ORM, fine in sync view) ──────
         prior_messages = list(
@@ -143,7 +147,7 @@ class QueryView(APIView):
                             payload = event
                     except json.JSONDecodeError:
                         continue
-                if payload:
+                if payload and payload.get('grounding_score', 0) >= 0.30:
                     await sync_to_async(cache.set)(cache_key, json.dumps(payload), QUERY_CACHE_TTL)
                     await sync_to_async(self._persist)(
                         user, session_id, question, doc_ids, payload, latency_ms, cache_hit=False

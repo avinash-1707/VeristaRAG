@@ -30,7 +30,7 @@ export function truncate(str: string, maxLength: number): string {
 }
 
 export function groundingLabel(score: number): 'high' | 'medium' | 'low' {
-  if (score >= 0.75) return 'high'
-  if (score >= 0.6) return 'medium'
+  if (score >= 0.5) return 'high'
+  if (score >= 0.2) return 'medium'
   return 'low'
 }

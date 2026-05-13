@@ -28,7 +28,7 @@ export default function MessageBubble({ message, streaming, isActive, onCitation
   const showWarning =
     !isUser &&
     typeof message.grounding_score === 'number' &&
-    message.grounding_score < 0.6
+    message.grounding_score < 0.2
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>

@@ -44,15 +44,30 @@ def _build_context(chunks: list[dict[str, Any]]) -> str:
     return '\n\n---\n\n'.join(parts)
 
 
+_REFUSAL_MARKER = 'do not contain sufficient information'
+
+
 def _build_contents(
     question: str,
     context: str,
     history: list[dict[str, Any]],
 ) -> list[types.Content]:
     contents: list[types.Content] = []
+
+    # Strip turns where the model gave a refusal — they bias Gemini to refuse again
+    # even when the current turn has valid excerpts.
+    filtered: list[dict[str, Any]] = []
     for msg in history[-_MAX_HISTORY_TURNS:]:
+        if msg['role'] == 'assistant' and _REFUSAL_MARKER in msg['content']:
+            if filtered and filtered[-1]['role'] == 'user':
+                filtered.pop()
+        else:
+            filtered.append(msg)
+
+    for msg in filtered:
         role = 'user' if msg['role'] == 'user' else 'model'
         contents.append(types.Content(role=role, parts=[types.Part(text=msg['content'])]))
+
     contents.append(types.Content(
         role='user',
         parts=[types.Part(text=f'Source excerpts:\n\n{context}\n\nQuestion: {question}')],
