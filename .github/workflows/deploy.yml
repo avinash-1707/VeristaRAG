@@ -103,5 +103,3 @@ jobs:
         run: curl --fail -s "${{ secrets.RENDER_DEPLOY_HOOK_API }}"
       - name: Deploy AI Service
         run: curl --fail -s "${{ secrets.RENDER_DEPLOY_HOOK_AI }}"
-      - name: Deploy Celery Worker
-        run: curl --fail -s "${{ secrets.RENDER_DEPLOY_HOOK_WORKER }}"

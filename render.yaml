@@ -46,27 +46,3 @@ services:
         sync: false
       - key: CLOUDINARY_URL
         sync: false
-
-  - type: worker
-    name: veritasrag-worker
-    env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    plan: free
-    autoDeploy: false
-    dockerCommand: celery -A config worker --loglevel=info --concurrency=2
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: SECRET_KEY
-        generateValue: true
-      - key: DEBUG
-        value: "False"
-      - key: CLOUDINARY_URL
-        sync: false
-      - key: AI_SERVICE_URL
-        sync: false
-      - key: INTERNAL_API_KEY
-        sync: false
