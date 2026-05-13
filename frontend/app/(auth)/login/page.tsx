@@ -73,6 +73,9 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
+  const { onBlur: emailOnBlur, ...emailRegister } = register('email')
+  const { onBlur: passwordOnBlur, ...passwordRegister } = register('password')
+
   async function onSubmit(values: FormValues): Promise<void> {
     setServerError(null)
     const result = await loginApi(values.email, values.password)
@@ -105,8 +108,8 @@ export default function LoginPage() {
             className={inputBase}
             style={{ ...inputStyle }}
             onFocus={onInputFocus}
-            onBlur={onInputBlur}
-            {...register('email')}
+            onBlur={(e) => { onInputBlur(e); emailOnBlur(e); }}
+            {...emailRegister}
           />
         </InputField>
 
@@ -118,8 +121,8 @@ export default function LoginPage() {
               className={`${inputBase} pr-10`}
               style={{ ...inputStyle }}
               onFocus={onInputFocus}
-              onBlur={onInputBlur}
-              {...register('password')}
+              onBlur={(e) => { onInputBlur(e); passwordOnBlur(e); }}
+              {...passwordRegister}
             />
             <button
               type="button"
