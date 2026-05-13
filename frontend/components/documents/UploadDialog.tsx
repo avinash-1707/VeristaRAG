@@ -37,13 +37,13 @@ export default function UploadDialog({ open, onClose }: UploadDialogProps) {
     setUploads((prev) => prev.map((u, i) => (i === index ? { ...u, ...patch } : u)))
   }
 
-  async function uploadFile(file: File, index: number): Promise<void> {
+  async function uploadFile(file: File, index: number): Promise<boolean> {
     setUploadState(index, { state: 'uploading', progress: 10 })
 
     const sigResult = await getSignatureApi(file.name)
     if ('error' in sigResult) {
       setUploadState(index, { state: 'error', error: sigResult.error })
-      return
+      return false
     }
     const sig = sigResult.data
     setUploadState(index, { progress: 30 })
@@ -62,7 +62,7 @@ export default function UploadDialog({ open, onClose }: UploadDialogProps) {
 
     if (!cloudRes.ok) {
       setUploadState(index, { state: 'error', error: 'Cloudinary upload failed' })
-      return
+      return false
     }
 
     const cloudData = (await cloudRes.json()) as { public_id: string }
@@ -77,10 +77,11 @@ export default function UploadDialog({ open, onClose }: UploadDialogProps) {
 
     if ('error' in docResult) {
       setUploadState(index, { state: 'error', error: docResult.error })
-      return
+      return false
     }
 
     setUploadState(index, { state: 'done', progress: 100 })
+    return true
   }
 
   async function handleFiles(files: File[]): Promise<void> {
@@ -93,10 +94,17 @@ export default function UploadDialog({ open, onClose }: UploadDialogProps) {
     setUploads((prev) => [...prev, ...newUploads])
     setUploading(true)
 
-    await Promise.all(files.map((f, i) => uploadFile(f, startIndex + i)))
+    const results = await Promise.all(files.map((f, i) => uploadFile(f, startIndex + i)))
 
     setUploading(false)
     qc.invalidateQueries({ queryKey: ['documents'] })
+
+    if (results.every(Boolean)) {
+      setTimeout(() => {
+        setUploads([])
+        onClose()
+      }, 1200)
+    }
   }
 
   function handleClose() {
