@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { getAccessToken } from '@/lib/auth'
 import { Header } from '@/components/ui/header-2'
 import { CTASection } from '@/components/landing/CTASection'
@@ -11,15 +10,13 @@ import { TechBarSection } from '@/components/landing/TechBarSection'
 
 export default async function RootPage() {
   const token = await getAccessToken()
-  if (token) {
-    redirect('/dashboard')
-  }
+  const isLoggedIn = !!token
   return (
     <div
       className="min-h-screen overflow-x-hidden"
       style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
     >
-      <Header />
+      <Header isLoggedIn={isLoggedIn} />
       <HeroSection />
       <TechBarSection />
       <FeaturesSection />

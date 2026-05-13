@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAccessToken } from '@/lib/auth'
 import type { User } from '@/lib/types'
-import Sidebar from '@/components/shared/Sidebar'
+import SidebarLayout from '@/components/shared/SidebarLayout'
 import KeepAlive from '@/components/shared/KeepAlive'
 
 const DJANGO_URL = process.env.DJANGO_INTERNAL_URL ?? 'http://localhost:8000'
@@ -23,12 +23,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect('/login')
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <>
       <KeepAlive />
-      <Sidebar user={user} />
-      <main className="flex-1 overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-        {children}
-      </main>
-    </div>
+      <SidebarLayout user={user}>{children}</SidebarLayout>
+    </>
   )
 }

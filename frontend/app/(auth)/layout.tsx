@@ -1,8 +1,14 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
+import { getAccessToken } from '@/lib/auth'
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const token = await getAccessToken()
+  if (token) {
+    redirect('/dashboard')
+  }
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
