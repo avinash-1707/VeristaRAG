@@ -161,56 +161,58 @@ export default function ChatWindow({
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
-          {messages.length === 0 && !streaming && (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <BookOpen className="h-10 w-10" style={{ color: 'var(--text-muted)' }} />
-              <div className="text-center">
-                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                  Ask a question
-                </p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Questions are answered from the selected documents only
-                </p>
+        {/* Messages — relative wrapper gives absolute scroller explicit bounds */}
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0 overflow-y-auto px-6 py-4">
+            {messages.length === 0 && !streaming && (
+              <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <BookOpen className="h-10 w-10" style={{ color: 'var(--text-muted)' }} />
+                <div className="text-center">
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    Ask a question
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Questions are answered from the selected documents only
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-          {messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isActive={activeMessageId === msg.id}
-              onCitationsOpen={() => handleMessageClick(msg)}
-            />
-          ))}
-          {streaming && !streaming.done && (
-            <div className="flex justify-start mb-4">
-              <div
-                className="px-4 py-3 text-sm leading-relaxed max-w-[75%]"
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: '16px 16px 16px 4px',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {streaming.content ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p> }}>
-                    {streaming.content}
-                  </ReactMarkdown>
-                ) : (
-                  <span className="animate-pulse" style={{ color: 'var(--text-muted)' }}>
-                    Thinking…
+            )}
+            {messages.map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isActive={activeMessageId === msg.id}
+                onCitationsOpen={() => handleMessageClick(msg)}
+              />
+            ))}
+            {streaming && !streaming.done && (
+              <div className="flex justify-start mb-4">
+                <div
+                  className="px-4 py-3 text-sm leading-relaxed max-w-[75%]"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: '16px 16px 16px 4px',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  {streaming.content ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p> }}>
+                      {streaming.content}
+                    </ReactMarkdown>
+                  ) : (
+                    <span className="animate-pulse" style={{ color: 'var(--text-muted)' }}>
+                      Thinking…
+                    </span>
+                  )}
+                  <span className="ml-0.5 animate-pulse font-bold" style={{ color: 'var(--accent-primary)' }}>
+                    |
                   </span>
-                )}
-                <span className="ml-0.5 animate-pulse font-bold" style={{ color: 'var(--accent-primary)' }}>
-                  |
-                </span>
+                </div>
               </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
+            )}
+            <div ref={bottomRef} />
+          </div>
         </div>
 
         <ChatInput onSubmit={handleSubmit} disabled={loading} />

@@ -16,7 +16,7 @@ export default function CitationCard({ citation, index }: CitationCardProps) {
 
   return (
     <div
-      className="rounded-2xl p-3 mb-2 border transition-all duration-200 cursor-pointer"
+      className="rounded-2xl p-3 mb-2 border transition-all duration-200 cursor-pointer overflow-hidden"
       style={{
         background: 'var(--citation-bg)',
         borderColor: 'var(--citation-border)',
@@ -64,7 +64,7 @@ export default function CitationCard({ citation, index }: CitationCardProps) {
 
       {expanded && citation.content && (
         <div
-          className="mt-2 text-xs leading-relaxed border-t pt-2"
+          className="mt-2 text-xs leading-relaxed border-t pt-2 break-words"
           style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
         >
           <ReactMarkdown

@@ -52,10 +52,12 @@ export default function CitationPanel({ citations, groundingScore }: CitationPan
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain p-4">
-        {citations.map((c, i) => (
-          <CitationCard key={c.chunk_id} citation={c} index={i + 1} />
-        ))}
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0 overflow-y-auto p-4">
+          {citations.map((c, i) => (
+            <CitationCard key={c.chunk_id} citation={c} index={i + 1} />
+          ))}
+        </div>
       </div>
     </aside>
   )
