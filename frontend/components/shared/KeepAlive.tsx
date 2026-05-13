@@ -2,15 +2,15 @@
 
 import { useEffect } from 'react'
 
-const PING_INTERVAL = 4 * 60 * 1000
+const REFRESH_INTERVAL = 45 * 60 * 1000
 
 export default function KeepAlive() {
   useEffect(() => {
-    const ping = () => {
-      fetch('/api/auth/me').catch(() => null)
+    const refresh = () => {
+      fetch('/api/auth/refresh', { method: 'POST' }).catch(() => null)
     }
 
-    const id = setInterval(ping, PING_INTERVAL)
+    const id = setInterval(refresh, REFRESH_INTERVAL)
     return () => clearInterval(id)
   }, [])
 

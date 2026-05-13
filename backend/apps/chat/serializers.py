@@ -4,13 +4,13 @@ from .models import ChatSession, Citation, Message, QueryLog
 
 
 class CitationSerializer(serializers.ModelSerializer):
-    chunk_content = serializers.CharField(source='chunk.content', read_only=True)
+    content = serializers.CharField(source='chunk.content', read_only=True)
     document_name = serializers.CharField(source='chunk.document.filename', read_only=True)
     page_number = serializers.IntegerField(source='chunk.page_number', read_only=True)
 
     class Meta:
         model = Citation
-        fields = ('id', 'chunk_id', 'chunk_content', 'document_name', 'page_number',
+        fields = ('id', 'chunk_id', 'content', 'document_name', 'page_number',
                   'similarity_score', 'citation_order')
 
 

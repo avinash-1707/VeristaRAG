@@ -24,7 +24,7 @@ export default async function ChatSessionPage({ params }: ChatSessionPageProps) 
   const data = (await res.json()) as { session: ChatSession; messages: Message[] }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <ChatWindow
         sessionId={sessionId}
         sessionTitle={data.session.title}

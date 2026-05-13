@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { BookOpen } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Citation, Message, StreamEvent } from '@/lib/types'
 import MessageBubble from './MessageBubble'
 import CitationPanel from './CitationPanel'
@@ -142,7 +141,7 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Header */}
         <div
           className="px-6 py-4 border-b flex items-center gap-3"
@@ -163,7 +162,7 @@ export default function ChatWindow({
         </div>
 
         {/* Messages */}
-        <ScrollArea className="flex-1 px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
           {messages.length === 0 && !streaming && (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
               <BookOpen className="h-10 w-10" style={{ color: 'var(--text-muted)' }} />
@@ -212,7 +211,7 @@ export default function ChatWindow({
             </div>
           )}
           <div ref={bottomRef} />
-        </ScrollArea>
+        </div>
 
         <ChatInput onSubmit={handleSubmit} disabled={loading} />
       </div>

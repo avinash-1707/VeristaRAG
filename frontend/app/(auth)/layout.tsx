@@ -1,3 +1,7 @@
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import ThemeToggle from '@/components/shared/ThemeToggle'
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -5,6 +9,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       style={{ background: 'var(--bg-base)' }}
     >
       <div className="w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-3 py-1.5 transition-all duration-150 hover:bg-[var(--bg-surface-hover)]"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to home
+          </Link>
+          <ThemeToggle />
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
             Veritas<span style={{ color: 'var(--accent-primary)' }}>RAG</span>
@@ -13,6 +29,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             Document intelligence, grounded in truth
           </p>
         </div>
+
         {children}
       </div>
     </div>

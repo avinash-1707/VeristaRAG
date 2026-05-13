@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { loginApi } from '@/lib/api'
 
 const schema = z.object({
@@ -15,9 +16,56 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+function InputField({
+  children,
+  label,
+  error,
+}: {
+  children: React.ReactNode
+  label: string
+  error?: string
+}) {
+  return (
+    <div>
+      <label
+        className="text-sm font-medium block mb-1.5"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: 'var(--state-error)' }}>
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+const inputBase =
+  'w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-all duration-150'
+
+const inputStyle = {
+  background: 'var(--bg-card-inner)',
+  border: '1px solid var(--border-strong)',
+  color: 'var(--text-primary)',
+}
+
+function onInputFocus(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = 'var(--accent-primary)'
+  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,88,10,0.15)'
+}
+
+function onInputBlur(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = 'var(--border-strong)'
+  e.currentTarget.style.boxShadow = 'none'
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -42,6 +90,7 @@ export default function LoginPage() {
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border-default)',
+        boxShadow: '0 0 40px 8px var(--glow-soft)',
       }}
     >
       <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
@@ -49,49 +98,43 @@ export default function LoginPage() {
       </h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-            Email
-          </label>
+        <InputField label="Email" error={errors.email?.message}>
           <input
             type="email"
             autoComplete="email"
-            className="w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors"
-            style={{
-              background: 'var(--bg-card-inner)',
-              border: '1px solid var(--border-strong)',
-              color: 'var(--text-primary)',
-            }}
+            className={inputBase}
+            style={{ ...inputStyle }}
+            onFocus={onInputFocus}
+            onBlur={onInputBlur}
             {...register('email')}
           />
-          {errors.email && (
-            <p className="text-xs mt-1" style={{ color: 'var(--state-error)' }}>
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+        </InputField>
 
-        <div>
-          <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-            Password
-          </label>
-          <input
-            type="password"
-            autoComplete="current-password"
-            className="w-full px-3 py-2.5 text-sm rounded-lg outline-none transition-colors"
-            style={{
-              background: 'var(--bg-card-inner)',
-              border: '1px solid var(--border-strong)',
-              color: 'var(--text-primary)',
-            }}
-            {...register('password')}
-          />
-          {errors.password && (
-            <p className="text-xs mt-1" style={{ color: 'var(--state-error)' }}>
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+        <InputField label="Password" error={errors.password?.message}>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              className={`${inputBase} pr-10`}
+              style={{ ...inputStyle }}
+              onFocus={onInputFocus}
+              onBlur={onInputBlur}
+              {...register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded transition-colors duration-150"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-bright)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </InputField>
 
         {serverError && (
           <div
@@ -99,6 +142,7 @@ export default function LoginPage() {
             style={{
               background: 'var(--state-error-subtle)',
               color: 'var(--state-error)',
+              border: '1px solid rgba(239,68,68,0.2)',
             }}
           >
             {serverError}
@@ -108,11 +152,21 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
           style={{
             background: 'linear-gradient(to bottom, #d4580a, #b84208)',
             color: 'var(--text-on-accent)',
             boxShadow: '0 0 20px 4px #d4580a60, inset 0 1px 0 #ffffff20',
+          }}
+          onMouseEnter={e => {
+            if (!isSubmitting) {
+              e.currentTarget.style.background = 'linear-gradient(to bottom, #e8751a, #c4520a)'
+              e.currentTarget.style.boxShadow = '0 0 28px 6px #d4580a80, inset 0 1px 0 #ffffff20'
+            }
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'linear-gradient(to bottom, #d4580a, #b84208)'
+            e.currentTarget.style.boxShadow = '0 0 20px 4px #d4580a60, inset 0 1px 0 #ffffff20'
           }}
         >
           {isSubmitting ? 'Signing in…' : 'Sign in'}
