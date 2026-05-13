@@ -7,7 +7,6 @@ services:
     plan: free
     healthCheckPath: /api/health/
     autoDeploy: false
-    preDeployCommand: python manage.py migrate --noinput
     envVars:
       - key: DATABASE_URL
         sync: false
