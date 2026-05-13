@@ -163,7 +163,11 @@ export default function ChatWindow({
 
         {/* Messages — relative wrapper gives absolute scroller explicit bounds */}
         <div className="flex-1 min-h-0 relative">
-          <div className="absolute inset-0 overflow-y-auto px-6 py-4">
+          <div
+            className="absolute inset-0 overflow-y-auto px-6 py-4"
+            data-lenis-prevent
+            data-lenis-prevent-wheel
+          >
             {messages.length === 0 && !streaming && (
               <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <BookOpen className="h-10 w-10" style={{ color: 'var(--text-muted)' }} />

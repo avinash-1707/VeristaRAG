@@ -53,7 +53,11 @@ export default function CitationPanel({ citations, groundingScore }: CitationPan
       </div>
 
       <div className="flex-1 min-h-0 relative">
-        <div className="absolute inset-0 overflow-y-auto p-4">
+        <div
+          className="absolute inset-0 overflow-y-auto p-4"
+          data-lenis-prevent
+          data-lenis-prevent-wheel
+        >
           {citations.map((c, i) => (
             <CitationCard key={c.chunk_id} citation={c} index={i + 1} />
           ))}
