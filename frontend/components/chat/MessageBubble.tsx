@@ -1,4 +1,7 @@
-import { BookOpen, Sparkles } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import { BookOpen, Sparkles, Copy, Check } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Message } from '@/lib/types'
@@ -13,7 +16,14 @@ interface MessageBubbleProps {
 }
 
 export default function MessageBubble({ message, streaming, isActive, onCitationsOpen }: MessageBubbleProps) {
+  const [copied, setCopied] = useState(false)
   const isUser = message.role === 'user'
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
   const hasCitations = !isUser && (message.citations?.length ?? 0) > 0
   const showWarning =
     !isUser &&
@@ -141,6 +151,16 @@ export default function MessageBubble({ message, streaming, isActive, onCitation
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {formatRelativeTime(message.created_at)}
           </p>
+          {!isUser && !streaming && (
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1 text-xs transition-colors ml-auto"
+              style={{ color: copied ? 'var(--state-success)' : 'var(--text-muted)' }}
+              title="Copy message"
+            >
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </button>
+          )}
         </div>
       </div>
     </div>

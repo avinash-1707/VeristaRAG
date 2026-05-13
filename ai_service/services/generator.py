@@ -11,16 +11,16 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _client: genai.Client | None = None
-_LOW_SIMILARITY_THRESHOLD = 0.05
-_LOW_GROUNDING_THRESHOLD = 0.6
+_LOW_GROUNDING_THRESHOLD = 0.30
 _MAX_HISTORY_TURNS = 10
 
 _SYSTEM_PROMPT = (
-    'You are a precise document assistant. '
-    'Answer ONLY using the provided source excerpts below. '
-    'If the answer is not present in the excerpts, state clearly: '
-    '"The provided documents do not contain sufficient information to answer this question." '
-    'Never invent facts, cite sources, or draw on outside knowledge.'
+    'You are a helpful document assistant. '
+    'Answer the user\'s question using only the source excerpts provided in the message. '
+    'You may synthesize information across multiple excerpts to form a complete answer. '
+    'If the excerpts genuinely do not contain enough information to answer the question, '
+    'say so briefly and specifically — explain what is missing rather than giving a generic refusal. '
+    'Do not use outside knowledge or invent facts not present in the excerpts.'
 )
 
 
@@ -102,9 +102,10 @@ async def generate(
     history: list[dict[str, Any]] | None = None,
 ) -> AsyncIterator[str]:
     client = _get_client()
-    top_sim = max((c.get('rerank_score', c.get('similarity_score', 0.0)) for c in chunks), default=0.0)
+    raw_scores = [c.get('rerank_score', c.get('similarity_score', 0.0)) for c in chunks]
+    top_sim = max(raw_scores, default=0.0)
     grounding_score = round(top_sim, 4)
-    low_confidence = top_sim < _LOW_SIMILARITY_THRESHOLD
+    low_confidence = top_sim < _LOW_GROUNDING_THRESHOLD
 
     context = _build_context(chunks)
     contents = _build_contents(question, context, history or [])
@@ -146,7 +147,7 @@ async def generate(
     final = {
         'answer': full_answer,
         'citations': citations,
-        'grounding_score': grounding_score if not low_confidence else 0.0,
+        'grounding_score': grounding_score,
         'top_similarity_score': round(top_sim, 4),
         'model_used': model_used,
     }

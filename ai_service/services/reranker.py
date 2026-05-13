@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import Any
 
 import cohere
@@ -34,7 +35,7 @@ def _rerank_fastembed(query: str, chunks: list[dict[str, Any]], top_n: int) -> l
     docs = [c['content'] for c in chunks]
     scores = list(model.rerank(query, docs))
     ranked = sorted(zip(scores, chunks), key=lambda x: x[0], reverse=True)
-    return [{**c, 'rerank_score': float(score)} for score, c in ranked[:top_n]]
+    return [{**c, 'rerank_score': 1.0 / (1.0 + math.exp(-float(score)))} for score, c in ranked[:top_n]]
 
 
 def rerank(query: str, chunks: list[dict[str, Any]], top_n: int = 5) -> list[dict[str, Any]]:
