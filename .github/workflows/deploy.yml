@@ -95,7 +95,7 @@ jobs:
 
   deploy:
     name: Deploy to Render
-    needs: [test-backend, test-ai-service, build-frontend]
+    needs: [test-backend, test-ai-service]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
