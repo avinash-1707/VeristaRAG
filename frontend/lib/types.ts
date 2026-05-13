@@ -5,7 +5,7 @@ export type MessageRole = 'user' | 'assistant'
 export interface User {
   id: string
   email: string
-  name: string
+  full_name: string
 }
 
 export interface Document {

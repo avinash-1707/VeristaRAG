@@ -25,7 +25,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const data = (await res.json()) as {
     access: string
     refresh: string
-    user: { id: string; email: string; name: string }
+    user: { id: string; email: string; full_name: string }
   }
 
   const store = await cookies()

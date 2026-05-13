@@ -52,11 +52,11 @@ export async function loginApi(email: string, password: string): Promise<ApiResu
 export async function signupApi(
   email: string,
   password: string,
-  name: string,
+  full_name: string,
 ): Promise<ApiResult<User>> {
   return apiFetch<User>('/api/auth/signup', {
     method: 'POST',
-    body: JSON.stringify({ email, password, name }),
+    body: JSON.stringify({ email, password, full_name }),
   })
 }
 

@@ -10,7 +10,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { signupApi } from '@/lib/api'
 
 const schema = z.object({
-  name: z.string().min(2, { error: 'Name must be at least 2 characters' }),
+  full_name: z.string().min(2, { error: 'Name must be at least 2 characters' }),
   email: z.string().email({ error: 'Valid email required' }),
   password: z.string().min(8, { error: 'Password must be at least 8 characters' }),
   privacyPolicy: z.literal(true, { error: 'You must accept the privacy policy to continue' }),
@@ -75,13 +75,13 @@ export default function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
-  const { onBlur: nameOnBlur, ...nameRegister } = register('name')
+  const { onBlur: nameOnBlur, ...nameRegister } = register('full_name')
   const { onBlur: emailOnBlur, ...emailRegister } = register('email')
   const { onBlur: passwordOnBlur, ...passwordRegister } = register('password')
 
   async function onSubmit(values: FormValues): Promise<void> {
     setServerError(null)
-    const result = await signupApi(values.email, values.password, values.name)
+    const result = await signupApi(values.email, values.password, values.full_name)
     if ('error' in result) {
       setServerError(result.error)
       return
@@ -104,7 +104,7 @@ export default function SignupPage() {
       </h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <InputField label="Full name" error={errors.name?.message}>
+        <InputField label="Full name" error={errors.full_name?.message}>
           <input
             type="text"
             autoComplete="name"

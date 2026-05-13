@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BookOpen,
   ChevronLeft,
@@ -12,25 +12,25 @@ import {
   MessageSquare,
   PlusCircle,
   X,
-} from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import { logoutApi, getSessionsApi } from '@/lib/api'
-import type { ChatSession, User } from '@/lib/types'
-import ThemeToggle from './ThemeToggle'
-import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { logoutApi, getSessionsApi } from "@/lib/api";
+import type { ChatSession, User } from "@/lib/types";
+import ThemeToggle from "./ThemeToggle";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
-  user: User
-  collapsed: boolean
-  onToggleCollapse: () => void
-  mobileOpen: boolean
-  onMobileClose: () => void
+  user: User;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 export default function Sidebar({
@@ -40,25 +40,25 @@ export default function Sidebar({
   mobileOpen,
   onMobileClose,
 }: SidebarProps) {
-  const pathname = usePathname()
-  const router = useRouter()
+  const pathname = usePathname();
+  const router = useRouter();
 
   const { data: sessionsResult } = useQuery({
-    queryKey: ['sessions'],
+    queryKey: ["sessions"],
     queryFn: getSessionsApi,
-  })
+  });
 
   const sessions: ChatSession[] =
-    sessionsResult && 'data' in sessionsResult ? sessionsResult.data : []
+    sessionsResult && "data" in sessionsResult ? sessionsResult.data : [];
 
   async function handleLogout(): Promise<void> {
-    await logoutApi()
-    router.push('/login')
-    router.refresh()
+    await logoutApi();
+    router.push("/login");
+    router.refresh();
   }
 
   function isActive(href: string) {
-    return pathname === href || pathname.startsWith(href + '/')
+    return pathname === href || pathname.startsWith(href + "/");
   }
 
   function NavItem({
@@ -67,62 +67,72 @@ export default function Sidebar({
     label,
     onClick,
   }: {
-    href: string
-    icon: React.ReactNode
-    label: string
-    onClick?: () => void
+    href: string;
+    icon: React.ReactNode;
+    label: string;
+    onClick?: () => void;
   }) {
-    const active = isActive(href)
+    const active = isActive(href);
     const linkClass = cn(
-      'flex items-center rounded-lg text-sm transition-colors',
-      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2',
-      active ? 'font-medium' : ''
-    )
+      "flex items-center rounded-lg text-sm transition-colors",
+      collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2",
+      active ? "font-medium" : "",
+    );
     const linkStyle = {
-      color: active ? 'var(--accent-bright)' : 'var(--text-secondary)',
-      background: active ? 'var(--accent-subtle)' : 'transparent',
-    }
+      color: active ? "var(--accent-bright)" : "var(--text-secondary)",
+      background: active ? "var(--accent-subtle)" : "transparent",
+    };
 
     if (collapsed) {
       return (
         <Tooltip>
           <TooltipTrigger
             render={
-              <Link href={href} onClick={onClick} className={linkClass} style={linkStyle}>
+              <Link
+                href={href}
+                onClick={onClick}
+                className={linkClass}
+                style={linkStyle}
+              >
                 {icon}
               </Link>
             }
           />
           <TooltipContent side="right">{label}</TooltipContent>
         </Tooltip>
-      )
+      );
     }
     return (
-      <Link href={href} onClick={onClick} className={linkClass} style={linkStyle}>
+      <Link
+        href={href}
+        onClick={onClick}
+        className={linkClass}
+        style={linkStyle}
+      >
         {icon}
         {label}
       </Link>
-    )
+    );
   }
 
-  const initials = user.name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
+  const initials = (user.full_name || user.email)
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase();
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col h-full shrink-0 border-r transition-all duration-300 ease-in-out',
-          collapsed ? 'w-14' : 'w-60'
+          "hidden md:flex flex-col h-full shrink-0 border-r transition-all duration-300 ease-in-out",
+          collapsed ? "w-14" : "w-60",
         )}
         style={{
-          background: 'var(--bg-surface)',
-          borderColor: 'var(--border-default)',
+          background: "var(--bg-surface)",
+          borderColor: "var(--border-default)",
         }}
       >
         <SidebarInner
@@ -141,30 +151,40 @@ export default function Sidebar({
       {/* Mobile drawer */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col w-72 border-r md:hidden transition-transform duration-300 ease-in-out',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          "fixed inset-y-0 left-0 z-50 flex flex-col w-72 border-r md:hidden transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
         style={{
-          background: 'var(--bg-surface)',
-          borderColor: 'var(--border-default)',
+          background: "var(--bg-surface)",
+          borderColor: "var(--border-default)",
         }}
       >
         <div
           className="flex items-center justify-between px-5 py-5 border-b"
-          style={{ borderColor: 'var(--border-default)' }}
+          style={{ borderColor: "var(--border-default)" }}
         >
-          <Link href="/" onClick={onMobileClose} className="flex items-center select-none">
-            <span className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+          <Link
+            href="/"
+            onClick={onMobileClose}
+            className="flex items-center select-none"
+          >
+            <span
+              className="text-base font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Veritas
             </span>
-            <span className="text-base font-bold" style={{ color: 'var(--accent-primary)' }}>
+            <span
+              className="text-base font-bold"
+              style={{ color: "var(--accent-primary)" }}
+            >
               RAG
             </span>
           </Link>
           <button
             onClick={onMobileClose}
             className="p-1.5 rounded-lg transition-colors"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: "var(--text-muted)" }}
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
@@ -182,12 +202,16 @@ export default function Sidebar({
               href={href}
               onClick={onMobileClose}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                isActive(href) ? 'font-medium' : ''
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                isActive(href) ? "font-medium" : "",
               )}
               style={{
-                color: isActive(href) ? 'var(--accent-bright)' : 'var(--text-secondary)',
-                background: isActive(href) ? 'var(--accent-subtle)' : 'transparent',
+                color: isActive(href)
+                  ? "var(--accent-bright)"
+                  : "var(--text-secondary)",
+                background: isActive(href)
+                  ? "var(--accent-subtle)"
+                  : "transparent",
               }}
             >
               {icon}
@@ -201,7 +225,7 @@ export default function Sidebar({
         />
       </aside>
     </>
-  )
+  );
 }
 
 function SidebarInner({
@@ -216,31 +240,45 @@ function SidebarInner({
   showCollapseToggle = true,
   onNavClick,
 }: {
-  user: User
-  sessions: ChatSession[]
-  collapsed: boolean
-  onToggleCollapse: () => void
-  handleLogout: () => void
-  NavItem: React.ComponentType<{ href: string; icon: React.ReactNode; label: string; onClick?: () => void }>
-  initials: string
-  pathname: string
-  showCollapseToggle?: boolean
-  onNavClick?: () => void
+  user: User;
+  sessions: ChatSession[];
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  handleLogout: () => void;
+  NavItem: React.ComponentType<{
+    href: string;
+    icon: React.ReactNode;
+    label: string;
+    onClick?: () => void;
+  }>;
+  initials: string;
+  pathname: string;
+  showCollapseToggle?: boolean;
+  onNavClick?: () => void;
 }) {
   return (
     <>
       {/* Logo — desktop only (mobile has its own header) */}
       {!collapsed && (
-        <div className="px-5 py-5 border-b hidden md:block" style={{ borderColor: 'var(--border-default)' }}>
+        <div
+          className="px-5 py-5 border-b hidden md:block"
+          style={{ borderColor: "var(--border-default)" }}
+        >
           <Link href="/" className="flex items-center select-none">
-            <span className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+            <span
+              className="text-base font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Veritas
             </span>
-            <span className="text-base font-bold" style={{ color: 'var(--accent-primary)' }}>
+            <span
+              className="text-base font-bold"
+              style={{ color: "var(--accent-primary)" }}
+            >
               RAG
             </span>
           </Link>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             Document Intelligence
           </p>
         </div>
@@ -248,12 +286,15 @@ function SidebarInner({
       {collapsed && (
         <div
           className="flex justify-center py-4 border-b"
-          style={{ borderColor: 'var(--border-default)' }}
+          style={{ borderColor: "var(--border-default)" }}
         >
           <Link
             href="/"
             className="flex items-center justify-center h-8 w-8 rounded-lg font-bold text-sm select-none"
-            style={{ background: 'var(--accent-subtle)', color: 'var(--accent-primary)' }}
+            style={{
+              background: "var(--accent-subtle)",
+              color: "var(--accent-primary)",
+            }}
             title="VeritasRAG — Home"
           >
             V
@@ -262,28 +303,45 @@ function SidebarInner({
       )}
 
       {/* Nav */}
-      <div className={cn('flex-1 overflow-y-auto py-4 space-y-1', collapsed ? 'px-1.5' : 'px-3')}>
-        <NavItem href="/dashboard" icon={<LayoutDashboard className="h-4 w-4 shrink-0" />} label="Dashboard" />
+      <div
+        className={cn(
+          "flex-1 overflow-y-auto py-4 space-y-1",
+          collapsed ? "px-1.5" : "px-3",
+        )}
+      >
+        <NavItem
+          href="/dashboard"
+          icon={<LayoutDashboard className="h-4 w-4 shrink-0" />}
+          label="Dashboard"
+        />
 
         {!collapsed && (
           <div className="pt-4 pb-1">
             <div
               className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-widest mb-2"
               style={{
-                borderColor: 'var(--border-accent)',
-                background: 'var(--accent-subtle)',
-                color: 'var(--accent-bright)',
+                borderColor: "var(--border-accent)",
+                background: "var(--accent-subtle)",
+                color: "var(--accent-bright)",
               }}
             >
               <FileText className="h-3 w-3" />
               Documents
             </div>
-            <NavItem href="/documents" icon={<FileText className="h-4 w-4 shrink-0" />} label="All Documents" />
+            <NavItem
+              href="/documents"
+              icon={<FileText className="h-4 w-4 shrink-0" />}
+              label="All Documents"
+            />
           </div>
         )}
         {collapsed && (
           <div className="pt-2">
-            <NavItem href="/documents" icon={<FileText className="h-4 w-4 shrink-0" />} label="All Documents" />
+            <NavItem
+              href="/documents"
+              icon={<FileText className="h-4 w-4 shrink-0" />}
+              label="All Documents"
+            />
           </div>
         )}
 
@@ -292,9 +350,9 @@ function SidebarInner({
             <div
               className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-widest mb-2"
               style={{
-                borderColor: 'var(--border-accent)',
-                background: 'var(--accent-subtle)',
-                color: 'var(--accent-bright)',
+                borderColor: "var(--border-accent)",
+                background: "var(--accent-subtle)",
+                color: "var(--accent-bright)",
               }}
             >
               <MessageSquare className="h-3 w-3" />
@@ -305,8 +363,8 @@ function SidebarInner({
               onClick={onNavClick}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors mb-1"
               style={{
-                color: 'var(--accent-primary)',
-                border: '1px dashed var(--border-strong)',
+                color: "var(--accent-primary)",
+                border: "1px dashed var(--border-strong)",
               }}
             >
               <PlusCircle className="h-4 w-4" />
@@ -318,16 +376,18 @@ function SidebarInner({
                 href={`/chat/${s.id}`}
                 onClick={onNavClick}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors truncate',
-                  pathname === `/chat/${s.id}` ? 'font-medium' : ''
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors truncate",
+                  pathname === `/chat/${s.id}` ? "font-medium" : "",
                 )}
                 style={{
                   color:
                     pathname === `/chat/${s.id}`
-                      ? 'var(--accent-bright)'
-                      : 'var(--text-muted)',
+                      ? "var(--accent-bright)"
+                      : "var(--text-muted)",
                   background:
-                    pathname === `/chat/${s.id}` ? 'var(--accent-subtle)' : 'transparent',
+                    pathname === `/chat/${s.id}`
+                      ? "var(--accent-subtle)"
+                      : "transparent",
                 }}
               >
                 <BookOpen className="h-3.5 w-3.5 shrink-0" />
@@ -344,7 +404,7 @@ function SidebarInner({
                   <Link
                     href="/chat"
                     className="flex items-center justify-center p-2.5 rounded-lg transition-colors"
-                    style={{ color: 'var(--accent-primary)' }}
+                    style={{ color: "var(--accent-primary)" }}
                   >
                     <PlusCircle className="h-4 w-4" />
                   </Link>
@@ -362,11 +422,11 @@ function SidebarInner({
           <button
             onClick={onToggleCollapse}
             className={cn(
-              'flex items-center rounded-lg text-xs transition-colors w-full py-2',
-              collapsed ? 'justify-center px-0' : 'gap-2 px-3'
+              "flex items-center rounded-lg text-xs transition-colors w-full py-2",
+              collapsed ? "justify-center px-0" : "gap-2 px-3",
             )}
-            style={{ color: 'var(--text-muted)' }}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            style={{ color: "var(--text-muted)" }}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
               <ChevronRight className="h-4 w-4" />
@@ -383,17 +443,22 @@ function SidebarInner({
       {/* User footer */}
       <div
         className={cn(
-          'border-t',
-          collapsed ? 'px-1.5 py-3 flex flex-col items-center gap-2' : 'px-4 py-4 flex items-center gap-3'
+          "border-t",
+          collapsed
+            ? "px-1.5 py-3 flex flex-col items-center gap-2"
+            : "px-4 py-4 flex items-center gap-3",
         )}
-        style={{ borderColor: 'var(--border-default)' }}
+        style={{ borderColor: "var(--border-default)" }}
       >
         {collapsed ? (
           <>
             <div
               className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-              style={{ background: 'var(--accent-subtle)', color: 'var(--accent-bright)' }}
-              title={user.name}
+              style={{
+                background: "var(--accent-subtle)",
+                color: "var(--accent-bright)",
+              }}
+              title={user.full_name || user.email}
             >
               {initials}
             </div>
@@ -401,7 +466,7 @@ function SidebarInner({
             <button
               onClick={handleLogout}
               className="p-2 rounded-lg transition-colors"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: "var(--text-muted)" }}
               aria-label="Logout"
             >
               <LogOut className="h-4 w-4" />
@@ -411,15 +476,24 @@ function SidebarInner({
           <>
             <div
               className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-              style={{ background: 'var(--accent-subtle)', color: 'var(--accent-bright)' }}
+              style={{
+                background: "var(--accent-subtle)",
+                color: "var(--accent-bright)",
+              }}
             >
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                {user.name}
+              <p
+                className="text-sm font-medium truncate"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {user.full_name || user.email}
               </p>
-              <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+              <p
+                className="text-xs truncate"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {user.email}
               </p>
             </div>
@@ -427,7 +501,7 @@ function SidebarInner({
             <button
               onClick={handleLogout}
               className="p-2 rounded-lg transition-colors"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: "var(--text-muted)" }}
               aria-label="Logout"
             >
               <LogOut className="h-4 w-4" />
@@ -436,5 +510,5 @@ function SidebarInner({
         )}
       </div>
     </>
-  )
+  );
 }
