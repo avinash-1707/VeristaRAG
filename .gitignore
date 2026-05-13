@@ -1,4 +1,6 @@
 context/
+CLAUDE.md
+memory/
 
 # --- Secrets & local env (never commit) ---
 .env
