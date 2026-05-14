@@ -101,7 +101,8 @@ async def query(
             )
 
         else:
-            # boolean, definition — raw query embedding is precise enough; no HyDE needed
+            # boolean, definition, procedural, analytical, troubleshooting, recommendation
+            # — raw query embedding is precise enough; no HyDE needed
             question_embedding = await embed_single(retrieval_query)
             raw_chunks = await retrieve(
                 question_embedding=question_embedding,

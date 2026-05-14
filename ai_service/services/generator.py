@@ -11,7 +11,7 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _client: genai.Client | None = None
-_LOW_GROUNDING_THRESHOLD = 0.30
+_LOW_GROUNDING_THRESHOLD = 0.15
 _MAX_HISTORY_TURNS = 10
 
 _SYSTEM_PROMPT = (
@@ -25,11 +25,13 @@ _SYSTEM_PROMPT = (
 
 _SUMMARY_SYSTEM_PROMPT = (
     'You are a helpful document assistant. '
-    'Produce a structured summary of the document based on the source excerpts provided. '
-    'Cover the main themes, key points, and notable details present in the excerpts. '
-    'Use bullet points or clear sections for readability. '
-    'Note at the end if the excerpts are a sample and may not represent all content. '
-    'Do not use outside knowledge or invent facts not present in the excerpts.'
+    'Based on the source excerpts provided, answer the user\'s question about the document. '
+    'If the question asks for a summary, overview, or general description: cover the main themes, '
+    'purpose, key points, and notable details. Use bullet points or clear sections for readability. '
+    'If the question asks about the document\'s purpose, goal, objective, or scope: synthesize an answer '
+    'from the content — you may infer purpose from what the document discusses even if not stated verbatim. '
+    'Note at the end if the excerpts are a sample and the full document may contain additional information. '
+    'Do not use outside knowledge unrelated to the document content.'
 )
 
 _EXTRACTION_SYSTEM_PROMPT = (
@@ -64,12 +66,48 @@ _DEFINITION_SYSTEM_PROMPT = (
     'Keep the response concise and precise.'
 )
 
+_PROCEDURAL_SYSTEM_PROMPT = (
+    'You are a professional document analysis assistant. '
+    'The user is asking how to perform a process or follow a procedure described in the document. '
+    'Extract the relevant steps from the source excerpts and present them as a clear, numbered list. '
+    'Preserve the sequence exactly as described in the document. '
+    'If prerequisites or conditions are mentioned, list them before the steps. '
+    'Do not add steps, infer missing steps, or use outside knowledge.'
+)
+
+_ANALYTICAL_SYSTEM_PROMPT = (
+    'You are a professional document analysis assistant. '
+    'The user is asking an analytical question that requires reasoning across the source excerpts. '
+    'Synthesize the relevant evidence from the excerpts to form a reasoned answer. '
+    'Clearly distinguish between what the document explicitly states and what can be reasonably inferred. '
+    'Label inferences with phrases like "This suggests..." or "Based on the document, it appears...". '
+    'Do not use outside knowledge or introduce facts not present in the excerpts.'
+)
+
+_TROUBLESHOOTING_SYSTEM_PROMPT = (
+    'You are a professional document analysis assistant. '
+    'The user is describing a problem and looking for resolution steps or causes described in the document. '
+    'Structure your response as: (1) Likely cause(s) based on the excerpts, '
+    '(2) Resolution steps in numbered order, (3) Any conditions or warnings mentioned. '
+    'Only include causes and steps that are explicitly or clearly implied by the source excerpts. '
+    'Do not invent steps or use outside knowledge.'
+)
+
+_RECOMMENDATION_SYSTEM_PROMPT = (
+    'You are a professional document analysis assistant. '
+    'The user is asking what the document recommends or suggests for their situation. '
+    'Extract the relevant guidance, recommendation, or suggested approach from the source excerpts. '
+    'State the recommendation clearly, then cite the specific part of the document it comes from. '
+    'If the document presents multiple options, list them with any conditions or trade-offs stated. '
+    'Do not recommend beyond what the document explicitly states. Do not use outside knowledge.'
+)
+
 _NO_CONTEXT_SYSTEM_PROMPT = (
     'You are a professional document analysis assistant. '
-    'The document does not contain information relevant to the user\'s question. '
-    'Respond with a single, concise, formally worded sentence stating that the specific subject '
-    'from the question is not present in the document. '
-    'Use professional language. No explanation, no elaboration, no outside knowledge.'
+    'The retrieved excerpts do not appear to contain information directly relevant to the user\'s question. '
+    'Respond with a single concise sentence acknowledging this, and suggest the user try rephrasing '
+    'or ask about specific sections or topics that may be covered. '
+    'Use professional language. Do not use outside knowledge.'
 )
 
 
@@ -186,6 +224,10 @@ async def generate(
         'comparison': _COMPARISON_SYSTEM_PROMPT,
         'boolean': _BOOLEAN_SYSTEM_PROMPT,
         'definition': _DEFINITION_SYSTEM_PROMPT,
+        'procedural': _PROCEDURAL_SYSTEM_PROMPT,
+        'analytical': _ANALYTICAL_SYSTEM_PROMPT,
+        'troubleshooting': _TROUBLESHOOTING_SYSTEM_PROMPT,
+        'recommendation': _RECOMMENDATION_SYSTEM_PROMPT,
     }
     system_prompt = _prompt_map.get(intent, _SYSTEM_PROMPT)
     context = _build_context(chunks)

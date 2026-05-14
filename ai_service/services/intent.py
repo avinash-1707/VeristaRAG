@@ -15,9 +15,22 @@ _client: genai.Client | None = None
 _INTENT_PROMPT = (
     'Classify the question and return a JSON object with three fields.\n\n'
     'FIELD 1 — "intent": one of:\n'
-    '  "summary"      — overview, broad understanding, or general description of the document\n'
+    '  "summary"      — ANY question asking about the document as a whole: its purpose, goal, objective,\n'
+    '                   scope, audience, overview, main themes, or general description.\n'
+    '                   This includes: summarize, overview, explain, describe the document, what is this about,\n'
+    '                   what does this document do/cover/contain, what is the purpose/goal/objective/aim/intent\n'
+    '                   of this document, what problem does this solve, who is this for, what is the scope.\n'
     '                   Examples: "What is this doc about?", "Summarize this", "What does this document cover?",\n'
-    '                             "Give me an overview", "What is the main topic?"\n'
+    '                             "Give me an overview", "What is the main topic?",\n'
+    '                             "What is the purpose of this document?",\n'
+    '                             "What does this document aim to achieve?",\n'
+    '                             "What are the goals of this document?",\n'
+    '                             "What is the scope of this document?",\n'
+    '                             "Who is the intended audience?",\n'
+    '                             "What problem does this document address?",\n'
+    '                             "What is the objective here?",\n'
+    '                             "Can you explain what this document is about?",\n'
+    '                             "Give me a brief description of this document"\n'
     '  "extraction"   — list every instance of something (dates, names, clauses, amounts, parties)\n'
     '                   Examples: "List all dates", "Extract all party names", "What obligations are mentioned?"\n'
     '  "comparison"   — compare or contrast two or more items from the document\n'
@@ -26,12 +39,34 @@ _INTENT_PROMPT = (
     '                   Examples: "Is X mentioned?", "Does the document contain Y?", "Was Z discussed?"\n'
     '  "definition"   — explain a term or concept as used in the document\n'
     '                   Examples: "What does X mean here?", "Define Y as used in the document"\n'
+    '  "procedural"   — how-to or step-by-step process described in the document\n'
+    '                   Examples: "How do I apply for X?", "What are the steps to complete Y?",\n'
+    '                             "Walk me through the process of Z", "What is the procedure for X?",\n'
+    '                             "How should I submit a claim?", "What do I need to do to renew?"\n'
+    '  "analytical"   — why/what-does-it-mean questions requiring inference or reasoning across the document\n'
+    '                   Examples: "Why does the document require X?", "What are the implications of clause Y?",\n'
+    '                             "What does this policy suggest about Z?", "What patterns can you identify?",\n'
+    '                             "What is the significance of X?", "What can we infer from section Y?"\n'
+    '  "troubleshooting" — diagnosing a problem or finding resolution steps described in the document\n'
+    '                   Examples: "Why is X not working?", "What should I do if Y fails?",\n'
+    '                             "How do I resolve error Z?", "What causes X issue?",\n'
+    '                             "What are common problems with Y?", "How do I fix X?"\n'
+    '  "recommendation" — asking for a suggested course of action based on document content\n'
+    '                   Examples: "What approach does the document recommend for X?",\n'
+    '                             "Which option should I choose according to this?",\n'
+    '                             "What does the document suggest I do about Y?",\n'
+    '                             "What is the recommended way to handle Z?"\n'
     '  "factual"      — specific fact, name, date, clause, value, or detail from the document\n'
-    '                   Examples: "What is the deadline?", "Who signed?", "What does clause 3.2 say?"\n'
+    '                   (NOT document-level questions — those are "summary")\n'
+    '                   Examples: "What is the deadline?", "Who signed?", "What does clause 3.2 say?",\n'
+    '                             "What is the penalty for late payment?", "When was this signed?"\n'
     '  "chitchat"     — greeting, thanks, or small talk with no document question\n'
     '                   Examples: "Hello", "Thanks!", "Great job", "How are you?"\n'
     '  "out_of_scope" — completely unrelated to any document (general knowledge, weather, etc.)\n'
     '                   Examples: "What is the capital of France?", "Tell me a joke"\n\n'
+    'DISAMBIGUATION RULE: If a question asks about the document itself at a high level '
+    '(its purpose, goal, objective, scope, audience, what it covers, what it is about) → always "summary". '
+    'Only use "factual" for specific named items, clauses, values, dates, or parties within the document.\n\n'
     'FIELD 2 — "hypothetical": ONLY if intent is "factual", write a 2-4 sentence formal document-style\n'
     'passage that would directly answer the question (HyDE technique for better retrieval).\n'
     'Empty string for all other intents.\n\n'
@@ -49,7 +84,8 @@ _RESPONSE_SCHEMA = {
             'type': 'STRING',
             'enum': [
                 'summary', 'extraction', 'comparison', 'boolean',
-                'definition', 'factual', 'chitchat', 'out_of_scope',
+                'definition', 'procedural', 'analytical', 'troubleshooting',
+                'recommendation', 'factual', 'chitchat', 'out_of_scope',
             ],
         },
         'hypothetical': {'type': 'STRING'},
@@ -60,7 +96,8 @@ _RESPONSE_SCHEMA = {
 
 _VALID_INTENTS = {
     'summary', 'extraction', 'comparison', 'boolean',
-    'definition', 'factual', 'chitchat', 'out_of_scope',
+    'definition', 'procedural', 'analytical', 'troubleshooting',
+    'recommendation', 'factual', 'chitchat', 'out_of_scope',
 }
 
 
