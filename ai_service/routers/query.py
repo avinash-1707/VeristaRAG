@@ -15,12 +15,14 @@ from services.retriever import retrieve, retrieve_stratified
 router = APIRouter()
 
 _CHITCHAT_RESPONSE = (
-    'Hello! I am a document analysis assistant. '
-    'Please ask me questions about your uploaded documents.'
+    'Hi! I can help you explore and understand your documents — '
+    'ask me to summarize, find specific facts, explain terms, compare sections, or walk through procedures. '
+    'What would you like to know?'
 )
 _OUT_OF_SCOPE_RESPONSE = (
-    'This question falls outside the scope of the uploaded documents. '
-    'Please ask questions related to the document content.'
+    'That question doesn\'t appear to be related to your uploaded documents. '
+    'I\'m best suited for questions about document content — '
+    'try asking about something specific in the files you\'ve uploaded.'
 )
 
 

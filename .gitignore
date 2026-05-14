@@ -121,3 +121,6 @@ temp/
 *.tmp
 *.bak
 .scratch/
+
+# --- Local test scripts ---
+ai_service/test_queries.py
