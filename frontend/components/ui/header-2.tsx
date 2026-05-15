@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import ThemeToggle from '@/components/shared/ThemeToggle'
+import VeritasLogo from '@/components/shared/VeritasLogo'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
@@ -127,20 +128,5 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
 }
 
 function Wordmark() {
-  return (
-    <Link href="/" className="flex items-center select-none">
-      <span
-        className="text-xl font-bold tracking-tight"
-        style={{ fontFamily: 'var(--font-outfit)', color: 'var(--text-primary)' }}
-      >
-        Veritas
-      </span>
-      <span
-        className="text-xl font-bold tracking-tight"
-        style={{ fontFamily: 'var(--font-outfit)', color: 'var(--accent-primary)' }}
-      >
-        RAG
-      </span>
-    </Link>
-  )
+  return <VeritasLogo href="/" markSize={28} textSize="text-base" />
 }

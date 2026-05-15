@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowRight, Shield } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import VeritasLogo from '@/components/shared/VeritasLogo'
 
 export function FooterSection() {
   return (
@@ -20,24 +21,8 @@ export function FooterSection() {
         />
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
-            <div className="mb-4 flex items-center gap-2.5">
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg, #d4580a, #b84208)',
-                  boxShadow: '0 0 12px 4px rgba(212,88,10,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Shield className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                VeritasRAG
-              </span>
+            <div className="mb-4">
+              <VeritasLogo href="/" markSize={28} textSize="text-sm" />
             </div>
             <p className="mb-2 max-w-xs text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Helping researchers and professionals get grounded, cited answers from their documents — instantly.

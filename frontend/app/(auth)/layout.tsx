@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ThemeToggle from '@/components/shared/ThemeToggle'
+import VeritasLogo from '@/components/shared/VeritasLogo'
 import { getAccessToken } from '@/lib/auth'
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -27,11 +28,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           <ThemeToggle />
         </div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Veritas<span style={{ color: 'var(--accent-primary)' }}>RAG</span>
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        <div className="flex flex-col items-center mb-8 gap-2">
+          <VeritasLogo href="/" markSize={36} textSize="text-xl" />
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Document intelligence, grounded in truth
           </p>
         </div>

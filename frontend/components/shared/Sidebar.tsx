@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { logoutApi, getSessionsApi } from "@/lib/api";
 import type { ChatSession, User } from "@/lib/types";
 import ThemeToggle from "./ThemeToggle";
+import VeritasLogo, { LogoMark } from "./VeritasLogo";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -163,24 +164,7 @@ export default function Sidebar({
           className="flex items-center justify-between px-5 py-5 border-b"
           style={{ borderColor: "var(--border-default)" }}
         >
-          <Link
-            href="/"
-            onClick={onMobileClose}
-            className="flex items-center select-none"
-          >
-            <span
-              className="text-base font-bold"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Veritas
-            </span>
-            <span
-              className="text-base font-bold"
-              style={{ color: "var(--accent-primary)" }}
-            >
-              RAG
-            </span>
-          </Link>
+          <VeritasLogo href="/" markSize={26} onClick={onMobileClose} />
           <button
             onClick={onMobileClose}
             className="p-1.5 rounded-lg transition-colors"
@@ -264,21 +248,8 @@ function SidebarInner({
           className="px-5 py-5 border-b hidden md:block"
           style={{ borderColor: "var(--border-default)" }}
         >
-          <Link href="/" className="flex items-center select-none">
-            <span
-              className="text-base font-bold"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Veritas
-            </span>
-            <span
-              className="text-base font-bold"
-              style={{ color: "var(--accent-primary)" }}
-            >
-              RAG
-            </span>
-          </Link>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+          <VeritasLogo href="/" markSize={26} />
+          <p className="text-xs mt-1.5 ml-0.5" style={{ color: "var(--text-muted)" }}>
             Document Intelligence
           </p>
         </div>
@@ -288,17 +259,7 @@ function SidebarInner({
           className="flex justify-center py-4 border-b"
           style={{ borderColor: "var(--border-default)" }}
         >
-          <Link
-            href="/"
-            className="flex items-center justify-center h-8 w-8 rounded-lg font-bold text-sm select-none"
-            style={{
-              background: "var(--accent-subtle)",
-              color: "var(--accent-primary)",
-            }}
-            title="VeritasRAG — Home"
-          >
-            V
-          </Link>
+          <VeritasLogo href="/" collapsed markSize={28} />
         </div>
       )}
 
