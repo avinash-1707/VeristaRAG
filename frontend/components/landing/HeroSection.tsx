@@ -142,38 +142,48 @@ export function HeroSection() {
           {HEADLINE_LINES.map((line, lineIndex) => (
             <div
               key={lineIndex}
-              className={`flex flex-wrap justify-center ${lineIndex === 1 ? "mt-[0.06em]" : ""}`}
+              className={`flex flex-wrap justify-center gap-x-[0.18em] ${lineIndex === 1 ? "mt-[0.06em]" : ""}`}
             >
-              {line.split("").map((letter, letterIndex) => (
-                <motion.span
-                  key={`${lineIndex}-${letterIndex}`}
-                  initial={{ y: 100, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{
-                    delay: lineIndex * 0.22 + letterIndex * 0.03,
-                    type: "spring",
-                    stiffness: 150,
-                    damping: 22,
-                  }}
-                  className="inline-block font-bold tracking-tight text-6xl md:text-7xl lg:text-8xl"
-                  style={
-                    lineIndex === 1
-                      ? {
-                          background:
-                            "linear-gradient(118deg, #faa06a 0%, #e8751a 35%, #d4580a 65%, #a83208 100%)",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          backgroundClip: "text",
-                          lineHeight: 1.05,
+              {line.split(" ").map((word, wordIndex) => (
+                <span key={wordIndex} className="inline-flex">
+                  {word.split("").map((letter, letterIndex) => {
+                    const globalIndex =
+                      line.split(" ").slice(0, wordIndex).join(" ").length +
+                      (wordIndex > 0 ? 1 : 0) +
+                      letterIndex;
+                    return (
+                      <motion.span
+                        key={`${lineIndex}-${wordIndex}-${letterIndex}`}
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{
+                          delay: lineIndex * 0.22 + globalIndex * 0.03,
+                          type: "spring",
+                          stiffness: 150,
+                          damping: 22,
+                        }}
+                        className="inline-block font-bold tracking-tight text-4xl sm:text-6xl md:text-7xl lg:text-8xl"
+                        style={
+                          lineIndex === 1
+                            ? {
+                                background:
+                                  "linear-gradient(118deg, #faa06a 0%, #e8751a 35%, #d4580a 65%, #a83208 100%)",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                                backgroundClip: "text",
+                                lineHeight: 1.05,
+                              }
+                            : {
+                                color: "var(--text-primary)",
+                                lineHeight: 1.05,
+                              }
                         }
-                      : {
-                          color: "var(--text-primary)",
-                          lineHeight: 1.05,
-                        }
-                  }
-                >
-                  {letter === " " ? " " : letter}
-                </motion.span>
+                      >
+                        {letter}
+                      </motion.span>
+                    );
+                  })}
+                </span>
               ))}
             </div>
           ))}

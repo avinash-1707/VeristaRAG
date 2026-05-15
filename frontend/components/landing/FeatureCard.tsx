@@ -16,11 +16,13 @@ const VARIANT_BY_INDEX: Variant[] = [
 export function FeatureCard({
   feature,
   index,
+  variant: variantOverride,
 }: {
   feature: (typeof FEATURES)[0];
   index: number;
+  variant?: Variant;
 }) {
-  const variant = VARIANT_BY_INDEX[index] ?? "vertical";
+  const variant = variantOverride ?? VARIANT_BY_INDEX[index] ?? "vertical";
 
   return (
     <motion.div
@@ -35,7 +37,7 @@ export function FeatureCard({
         borderRadius: 20,
         padding: variant === "vertical" ? "24px" : "20px 22px",
         width: "100%",
-        height: "100%",
+        height: variantOverride ? "auto" : "100%",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: variant === "vertical" ? "column" : "row",

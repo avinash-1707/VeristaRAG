@@ -78,8 +78,15 @@ export function FeaturesSection() {
           </p>
         </motion.div>
 
-        {/* ── Pinwheel stage ── */}
-        <div style={{ overflowX: "auto", overflowY: "hidden" }}>
+        {/* ── Mobile grid (< md) ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:hidden">
+          {FEATURES.map((f, i) => (
+            <FeatureCard key={f.title} feature={f} index={i} variant="vertical" />
+          ))}
+        </div>
+
+        {/* ── Pinwheel stage (≥ md) ── */}
+        <div className="hidden md:block" style={{ overflowX: "auto", overflowY: "hidden" }}>
           <div
             className="mx-auto"
             style={{

@@ -13,16 +13,17 @@ AI-powered knowledge base assistant. Upload documents (PDF, DOCX, TXT), ask ques
 3. [Tech Stack](#tech-stack)
 4. [Database Schema](#database-schema)
 5. [RAG Pipeline](#rag-pipeline)
-6. [Citation Grounding](#citation-grounding)
-7. [Caching Strategy](#caching-strategy)
-8. [Scalability Design](#scalability-design)
-9. [AWS Architecture](docs/aws-architecture.md)
-10. [GCP Architecture](docs/gcp-architecture.md)
-11. [Local Setup](#local-setup)
-12. [API Documentation](#api-documentation)
-13. [Deployment](#deployment)
-14. [CI/CD](#cicd)
-15. [Known Limitations](#known-limitations)
+6. [Intent Classification](#intent-classification)
+7. [Citation Grounding](#citation-grounding)
+8. [Caching Strategy](#caching-strategy)
+9. [Scalability Design](#scalability-design)
+10. [AWS Architecture](docs/aws-architecture.md)
+11. [GCP Architecture](docs/gcp-architecture.md)
+12. [Local Setup](#local-setup)
+13. [API Documentation](#api-documentation)
+14. [Deployment](#deployment)
+15. [CI/CD](#cicd)
+16. [Known Limitations](#known-limitations)
 
 ---
 
@@ -83,9 +84,11 @@ VeritasRAG is a production-grade RAG (Retrieval-Augmented Generation) system bui
        │              │   extractor.py  (pdfplumber / python-docx)      │
        │              │   chunker.py    (512 tok, 50 overlap, tiktoken) │
        │              │   embedder.py   (text-embedding-004, 768d)      │
-       │              │   retriever.py  (ANN + BM25 + RRF)             │
-       │              │   reranker.py   (cross-encoder, top-20→top-5)  │
-       │              │   generator.py  (gemini-2.5-flash-lite, SSE)   │
+       │              │   intent.py     (12-class classifier + HyDE)   │
+       │              │   hyde.py       (hypothetical passage gen)      │
+       │              │   retriever.py  (stratified + ANN + BM25 + RRF)│
+       │              │   reranker.py   (cross-encoder, top-20→top-8)  │
+       │              │   generator.py  (intent-aware prompts, SSE)    │
        │              └──────────────────────┬──────────────────────────┘
        │                                     │
        ▼                                     ▼
@@ -298,7 +301,7 @@ Frontend polls GET /api/documents/{id}/ every 3 s until status = 'ready'
 User types question
        │
        ▼
-Django GET /api/chat/query/
+Django POST /api/chat/query/
        │
        ├── Redis cache hit?  ──► return cached response (<5 ms)
        │
@@ -308,22 +311,50 @@ Django GET /api/chat/query/
        FastAPI POST /query
              │
              ▼
-       embedder.py    — embed question → 768-dim vector
+       intent.py  — classify_intent(question, history)
+                    Returns: intent (12 classes) + hypothetical passage + standalone rewrite
+                    │
+                    ├── "chitchat"     ──► static greeting response  (no retrieval)
+                    ├── "out_of_scope" ──► static redirect response  (no retrieval)
+                    │
+                    └── document query continues:
+                          │
+                          │  standalone_query = result.standalone_query or question
+                          │
+                          ├── intent: "summary" / "extraction"
+                          │     retriever.py — retrieve_stratified()
+                          │                    SQL window fn spreads chunks across all pages
+                          │                    (3 chunks/page, max 25 for summary;
+                          │                     4 chunks/page, max 30 for extraction)
+                          │                    ── no embedding, no rerank
+                          │
+                          ├── intent: "comparison"
+                          │     embedder.py   — embed standalone_query → 768-dim vector
+                          │     retriever.py  — ANN top-20 + BM25 top-20 → RRF merge
+                          │     reranker.py   — Cohere reranker → top-12 chunks
+                          │
+                          ├── intent: "factual"
+                          │     hyde.py       — hypothetical passage already generated inline
+                          │                     by intent classifier (saves one round-trip)
+                          │     embedder.py   — embed hypothetical passage → 768-dim vector
+                          │                     (ANN uses HyDE embedding; BM25 uses raw query)
+                          │     retriever.py  — ANN top-20 + BM25 top-20 → RRF merge
+                          │     reranker.py   — Cohere reranker → top-8 chunks
+                          │
+                          └── intent: "boolean" / "definition" / "procedural" /
+                                       "analytical" / "troubleshooting" / "recommendation"
+                                embedder.py   — embed standalone_query → 768-dim vector
+                                retriever.py  — ANN top-20 + BM25 top-20 → RRF merge
+                                reranker.py   — Cohere reranker → top-8 chunks
              │
              ▼
-       retriever.py   — pgvector HNSW cosine ANN  top-20
-                      + PostgreSQL BM25 FTS        top-20
-                      → Reciprocal Rank Fusion merge
-             │
-             ▼
-       reranker.py    — Cohere reranker re-scores merged top-20
-                      → selects top-5 chunks
-             │
-             ▼
-       generator.py   — checks grounding score
-                        if low → returns "insufficient information" response
-                        else  → builds grounding prompt + calls gemini-2.5-flash-lite
-                              → streams tokens via SSE
+       generator.py
+             — selects intent-specific system prompt (9 prompts total)
+             — strips assistant refusals from history to prevent cascading refusals
+             — if top_sim < 0.15 → low-confidence path: _NO_CONTEXT_SYSTEM_PROMPT,
+               no source excerpts injected, model acknowledges gap
+             — else → builds [source excerpts + question] content,
+               streams tokens via SSE (gemini-2.5-flash-lite with fallback chain)
              │
              ▼
        Django proxies SSE stream → Next.js → browser (token by token)
@@ -336,21 +367,76 @@ Django GET /api/chat/query/
 
 ---
 
+## Intent Classification
+
+Every query passes through a Gemini-based classifier before retrieval. A single LLM call returns three fields:
+
+| Field | Purpose |
+|---|---|
+| `intent` | One of 12 classes (see table below) |
+| `hypothetical` | HyDE passage for `factual` queries; empty string otherwise |
+| `standalone_query` | Rewritten follow-up query if pronouns/references require context; empty string if already standalone |
+
+**12 intent classes and their retrieval strategy:**
+
+| Intent | Retrieval strategy | Rerank top-N |
+|---|---|---|
+| `summary` | `retrieve_stratified` — 3 chunks/page, max 25 | None |
+| `extraction` | `retrieve_stratified` — 4 chunks/page, max 30 | None |
+| `comparison` | ANN + BM25 + RRF, top-20 | 12 |
+| `factual` | HyDE embedding for ANN + raw query for BM25, top-20 | 8 |
+| `boolean` | ANN + BM25 + RRF, top-15 | 8 |
+| `definition` | ANN + BM25 + RRF, top-15 | 8 |
+| `procedural` | ANN + BM25 + RRF, top-15 | 8 |
+| `analytical` | ANN + BM25 + RRF, top-15 | 8 |
+| `troubleshooting` | ANN + BM25 + RRF, top-15 | 8 |
+| `recommendation` | ANN + BM25 + RRF, top-15 | 8 |
+| `chitchat` | **No retrieval** — static response | — |
+| `out_of_scope` | **No retrieval** — static redirect | — |
+
+**HyDE (Hypothetical Document Embeddings) for `factual` queries:**
+
+Instead of embedding the raw question, the classifier generates a short formal passage that would appear in a document answering the question. The ANN search embeds this passage — its vocabulary matches corpus language better than question phrasing, improving recall for paraphrased or indirect lookups. BM25 still runs on the original query for complementary keyword coverage.
+
+**Conversation-aware standalone rewriting:**
+
+Follow-up queries like *"tell me more about that"* or *"what about section 3?"* are rewritten to fully self-contained questions before retrieval. This prevents the retriever from embedding pronouns with no referent.
+
+**Intent-specific system prompts in the generator:**
+
+Each intent maps to a dedicated system prompt that shapes response format and tone:
+
+| Intent | Response format |
+|---|---|
+| `summary` | Bullet points / sections; notes if excerpts are a sample |
+| `extraction` | Numbered/bulleted list with source references per item |
+| `comparison` | Table or side-by-side bullets; highlights similarities and differences |
+| `boolean` | Starts with "Yes" or "No"; one sentence citing the document |
+| `definition` | Explains the term as used in context; no dictionary definitions |
+| `procedural` | Numbered steps in document order; prerequisites first |
+| `analytical` | Labels inferences ("This suggests…"); distinguishes stated vs. inferred |
+| `troubleshooting` | Structured: cause → resolution steps → conditions/warnings |
+| `recommendation` | States recommendation + source; lists options with trade-offs if multiple |
+
+---
+
 ## Citation Grounding
 
 Every assistant answer is accompanied by citation cards. The system enforces grounding at multiple levels:
 
 1. **Retrieval grounding**: Only chunks from the user's selected documents are retrieved — no cross-user data.
 
-2. **Prompt grounding**: The system prompt instructs the model to answer exclusively from provided excerpts:
+2. **Prompt grounding**: Every system prompt (9 total, one per intent) instructs the model to answer exclusively from the provided source excerpts. Example for `factual`:
    ```
-   Answer ONLY using the provided source excerpts below.
-   If the answer is not present in the excerpts, state clearly:
-   "The provided documents do not contain sufficient information to answer this question."
-   Never invent facts, cite sources, or draw on outside knowledge.
+   You are a helpful document assistant.
+   Answer the user's question using only the source excerpts provided in the message.
+   You may synthesize information across multiple excerpts to form a complete answer.
+   If the excerpts genuinely do not contain enough information to answer the question,
+   say so briefly and specifically — explain what is missing rather than giving a generic refusal.
+   Do not use outside knowledge or invent facts not present in the excerpts.
    ```
 
-3. **Score-based rejection**: If the top reranker score falls below the low-confidence threshold, the system bypasses generation entirely and returns the "insufficient information" message directly — no LLM call.
+3. **Score-based rejection**: If the top reranker score falls below the low-confidence threshold (0.15), the generator uses `_NO_CONTEXT_SYSTEM_PROMPT` with no source excerpts — the model acknowledges the gap without fabricating content. Stratified intents (`summary`, `extraction`) only reject if the chunk list is empty.
 
 4. **Citation cards**: Every answer renders citation cards showing:
    - Exact chunk text (the passage the model read)

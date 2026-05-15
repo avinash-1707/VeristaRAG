@@ -304,7 +304,7 @@ export function ProcessSection() {
                       background: "var(--bg-surface-elevated)",
                       border: "1px solid var(--border-default)",
                       borderRadius: 9999,
-                      padding: "48px 32px",
+                      padding: "clamp(28px, 5vw, 48px) clamp(20px, 4vw, 32px)",
                     }}
                   >
                     <div
