@@ -30,16 +30,16 @@ Suggested AWS-based production architecture for VeritasRAG. This is a migration 
 │           │                                                                │
 │           ▼                                                                │
 │  ┌────────────────────┐     ┌────────────────────────────────────────────┐│
-│  │  ECS (Fargate)     │     │  Amazon ElastiCache (Redis)                ││
+│  │  ECS (Fargate)     │     │  Amazon ElastiCache (Valkey or Redis)      ││
 │  │  Celery Worker     │     │  • Query cache  (1 hr TTL)                 ││
 │  │  SQS as broker     │     │  • Stats cache  (5 min TTL)                ││
-│  │  (optional alt.)   │     │  • Celery broker (default Redis)           ││
+│  │  (optional alt.)   │     │  • Celery broker (Redis-compatible)        ││
 │  └────────────────────┘     └────────────────────────────────────────────┘│
 │                                                                            │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
-│  │  Amazon RDS (PostgreSQL 16) + pgvector extension                     │ │
+│  │  Amazon RDS (PostgreSQL 16 or 17) + pgvector extension               │ │
 │  │  Multi-AZ standby  •  Read replica for stats queries                 │ │
-│  │  OR: Amazon Aurora Serverless v2 (auto-pause on free tier)           │ │
+│  │  OR: Amazon Aurora Serverless v2 (PostgreSQL 16, auto-pause)         │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                            │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
@@ -69,9 +69,9 @@ Suggested AWS-based production architecture for VeritasRAG. This is a migration 
 |---|---|
 | Container orchestration | ECS on Fargate (serverless containers) or EKS |
 | Next.js frontend | AWS Amplify Hosting or App Runner |
-| PostgreSQL + pgvector | RDS PostgreSQL 16 or Aurora Serverless v2 |
+| PostgreSQL + pgvector | RDS PostgreSQL 16 / 17 or Aurora Serverless v2 (PostgreSQL 16) |
 | Vector search (at scale) | Amazon OpenSearch with kNN plugin |
-| Redis cache + broker | Amazon ElastiCache for Redis |
+| Redis cache + broker | Amazon ElastiCache for Valkey (preferred) or Redis |
 | File storage | Amazon S3 + pre-signed upload URLs |
 | LLM / embeddings | Amazon Bedrock (Claude / Titan Embeddings) or keep Google AI |
 | CDN | Amazon CloudFront |
@@ -93,7 +93,9 @@ Replace `CLOUDINARY_URL` with `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS
 
 ### From Upstash → ElastiCache
 
-`REDIS_URL` swap only. ElastiCache Redis is VPC-internal; Celery and Django connect via the private endpoint.
+`REDIS_URL` swap only. ElastiCache is VPC-internal; Celery and Django connect via the private endpoint.
+
+**Note on Redis vs Valkey:** Redis relicensed to SSPL in March 2024. AWS now recommends **ElastiCache for Valkey** (the open-source fork) for new deployments — it is API-compatible with Redis 7.2, so Celery and Django cache backends work without changes. ElastiCache for Redis remains available for existing workloads.
 
 ### From Render → ECS Fargate
 
@@ -111,7 +113,7 @@ Pre-deploy migration hook becomes an ECS one-off task running `python manage.py 
 
 If you want to stay fully within AWS, replace `google-genai` with `boto3` + Amazon Bedrock:
 - Embeddings: `amazon.titan-embed-text-v2` — 1024d (adjust `vector(768)` → `vector(1024)` in schema)
-- Generation: `anthropic.claude-3-5-sonnet-20241022-v2:0` via Bedrock
+- Generation: `anthropic.claude-3-7-sonnet-20250219-v1:0` (Claude 3.7 Sonnet) via Bedrock — check the Bedrock console for the latest available Claude model ID
 
 No code changes beyond the service clients and the vector dimension.
 

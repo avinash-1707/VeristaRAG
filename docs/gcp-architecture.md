@@ -16,7 +16,7 @@ Suggested GCP-based alternative architecture for VeritasRAG. This is a migration
 │                             │                                              │
 │                             ▼                                              │
 │  ┌────────────────────────────────────────────────────────────────────┐   │
-│  │  Cloud Run  (Next.js)   — auto-scales to zero, no cold start tax   │   │
+│  │  Cloud Run  (Next.js)   — auto-scales to zero (cold starts at 0)   │   │
 │  └──────────────────────────────────────────────────────────────────── ┘   │
 │                                                                            │
 │  ┌──────────────────────────┐   ┌────────────────────────────────────┐    │
@@ -32,13 +32,13 @@ Suggested GCP-based alternative architecture for VeritasRAG. This is a migration
 │  └──────────────────────────┘                                             │
 │                                                                            │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
-│  │  Cloud SQL (PostgreSQL 16)  +  pgvector extension                    │ │
+│  │  Cloud SQL (PostgreSQL 16 or 17)  +  pgvector extension             │ │
 │  │  HA configuration  •  read replica for analytics                    │ │
 │  │  OR:  AlloyDB (PostgreSQL-compatible, better vector performance)     │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                            │
 │  ┌──────────────────────────────────────────────────────────────────────┐ │
-│  │  Memorystore for Redis (managed Redis 7)                             │ │
+│  │  Memorystore for Valkey or Redis (managed, Redis-compatible)         │ │
 │  │  • Query cache, stats cache, Celery broker                          │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                            │
@@ -53,7 +53,7 @@ Suggested GCP-based alternative architecture for VeritasRAG. This is a migration
 │  │  Supports billions of vectors, fully managed                        │ │
 │  └──────────────────────────────────────────────────────────────────────┘ │
 │                                                                            │
-│  Secrets: Secret Manager  •  Networking: VPC + VPC Connector               │
+│  Secrets: Secret Manager  •  Networking: VPC + Direct VPC Egress           │
 │  Observability: Cloud Logging + Cloud Trace                                │
 │  CI/CD: GitHub Actions → Artifact Registry → Cloud Run deploy             │
 └────────────────────────────────────────────────────────────────────────────┘
@@ -66,10 +66,10 @@ Suggested GCP-based alternative architecture for VeritasRAG. This is a migration
 | Need | Service |
 |---|---|
 | Container runtime | Cloud Run (serverless) or GKE Autopilot |
-| Next.js frontend | Cloud Run or Firebase Hosting |
-| PostgreSQL + pgvector | Cloud SQL for PostgreSQL 16 or AlloyDB |
+| Next.js frontend | Cloud Run or Firebase App Hosting (SSR-native, launched 2024) |
+| PostgreSQL + pgvector | Cloud SQL for PostgreSQL 16 / 17 or AlloyDB |
 | Vector search (at scale) | Vertex AI Vector Search |
-| Redis cache + broker | Memorystore for Redis |
+| Redis cache + broker | Memorystore for Valkey (preferred) or Redis |
 | File storage | Cloud Storage + signed upload URLs |
 | LLM / embeddings | Vertex AI (Gemini + text-embedding) — same API, different endpoint |
 | CDN | Cloud CDN + Cloud Load Balancing |
@@ -91,7 +91,11 @@ Replace `CLOUDINARY_URL` with `GCS_BUCKET_NAME` + Application Default Credential
 
 ### From Upstash → Memorystore
 
-`REDIS_URL` swap only. Memorystore Redis is VPC-internal; connect via the internal IP. Use VPC Connector on Cloud Run to reach Memorystore.
+`REDIS_URL` swap only. Memorystore is VPC-internal; connect via the internal IP.
+
+**Valkey vs Redis:** Redis relicensed to SSPL in March 2024. GCP now offers **Memorystore for Valkey** (open-source fork, API-compatible with Redis 7.2) as the recommended choice for new deployments. Celery and Django cache backends work without any code changes.
+
+**VPC connectivity:** Use **Direct VPC Egress** on Cloud Run (GA since 2024) to reach Memorystore — it is simpler and cheaper than the legacy VPC Connector (no additional instance required). Set `--vpc-egress=all-traffic` and specify the subnet on the Cloud Run service.
 
 ### From Render → Cloud Run
 
@@ -116,7 +120,7 @@ This eliminates the always-on worker cost and gives per-job scaling.
 
 ### LLM / embeddings already on Vertex AI
 
-The current stack uses `google-genai` with `text-embedding-004` and `gemini-2.5-flash-lite`. On GCP, the same models are available via the Vertex AI endpoint — change `GOOGLE_GENAI_USE_VERTEXAI=1` and set `GOOGLE_CLOUD_PROJECT` / `GOOGLE_CLOUD_LOCATION`. No SDK changes.
+The current stack uses `google-genai` with `text-embedding-005` and `gemini-2.5-flash-lite`. On GCP, the same models are available via the Vertex AI endpoint — change `GOOGLE_GENAI_USE_VERTEXAI=1` and set `GOOGLE_CLOUD_PROJECT` / `GOOGLE_CLOUD_LOCATION`. No SDK changes.
 
 ### Vertex AI Vector Search (scale-out path)
 
@@ -135,10 +139,10 @@ When pgvector HNSW query latency exceeds SLA (typically > 50 million vectors):
 | Cloud Run (Django) | 1 vCPU / 512 MB, min-instances: 1 | ~$10 |
 | Cloud Run (FastAPI) | 1 vCPU / 512 MB, min-instances: 1 | ~$10 |
 | Cloud Run (Celery / Jobs) | per-use | ~$2 |
-| Cloud SQL PostgreSQL | db-g1-small, 20 GB SSD | ~$18 |
+| Cloud SQL PostgreSQL | db-custom-1-3840, 20 GB SSD | ~$25 |
 | Memorystore Redis | basic, 1 GB | ~$16 |
 | Cloud Storage | 10 GB + operations | ~$1 |
 | Cloud CDN + LB | 1 TB transfer | ~$10 |
-| **Total** | | **~$67/mo** |
+| **Total** | | **~$74/mo** |
 
 Cloud Run scales to zero outside business hours; actual cost for a demo workload will be significantly lower.
