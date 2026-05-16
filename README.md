@@ -2,7 +2,7 @@
 
 AI-powered knowledge base assistant. Upload documents (PDF, DOCX, TXT), ask questions, and receive responses grounded exclusively in retrieved source material — every answer cites the exact passage it came from.
 
-**Live demo:** [veritas-rag.vercel.app](https://veritas-rag.vercel.app)
+**Live demo:** [veritas.avnsh.xyz](https://veritas.avnsh.xyz)
 
 ---
 
